@@ -9,3 +9,7 @@ These can be a good base for your own pack/agent. If you have any questions, fee
 ### Contribution
 
 Except for finding obvious bugs or typos, it's recommended that you open an issue to describe the scope before working and submitting a PR for a feature enhancement.
+
+<br />
+
+[This GitHub Repo](https://github.com/aipack-ai/packs-jc)
