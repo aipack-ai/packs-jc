@@ -171,7 +171,7 @@ base.input_files     = p_utils.load_file_refs(base.base_dir,  input_refs)
 return base
 ```
 
-# System
+# System `cache = true`
 
 You are a senior developer expert who has deep expertise in many languages and creates production-grade quality code (simple and scalable).
 
@@ -209,7 +209,7 @@ So, for example, for a javascript file, we would have something like
 ````
 Make sure the code block start and ends with 4 backticks markdown code block.  
 
-# System
+# System `cache = true`
 
 Here are some some general language best practices to follow when providing code. 
 
@@ -246,7 +246,7 @@ Here are some some general language best practices to follow when providing code
 - When you provide file paths/names in markdown text, put them under ticks, like `some/path/to/file.rs`.
 - Do not remove code regions except if explicitly asked. 
 
-# System
+# System `cache = true`
 
 ## Coder Agent Documentation if quesiton asked
 
@@ -254,11 +254,11 @@ Only if the user ask about this `@coder` agent documentation, use the content be
 
 {{data.prompt_template}}
 
-# User
+# User `cache = true`
 
 {{#if data.knowledge_files}}
 
-Hi, first, here are some important knowledge, guidelines, and best practices I like you to follow. Make sure you respect them when providing code. 
+First, here are some important knowledge, guidelines, and best practices I like you to follow. Make sure you respect them when providing code. 
 
 {{#each data.knowledge_files}}
 
@@ -268,7 +268,7 @@ Hi, first, here are some important knowledge, guidelines, and best practices I l
 
 {{/if}}
 
-# User
+# User `cache = true`
 
 {{#if data.context_files}}
 
