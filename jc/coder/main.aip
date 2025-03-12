@@ -248,9 +248,11 @@ Here are some some general language best practices to follow when providing code
 
 # System `cache = true`
 
-## Coder Agent Documentation if quesiton asked
+## This Coder Agent Documentation if question asked
 
-Only if the user ask about this `@coder` agent documentation, use the content below as reference, answer the question, and repeat the content below (same formating
+This is only if the user ask about how this agent or the prompt work. 
+
+Only when the user ask about this `@coder` agent documentation, use the content below as reference, answer the question, and repeat the content below (same formating.
 
 {{data.prompt_template}}
 
