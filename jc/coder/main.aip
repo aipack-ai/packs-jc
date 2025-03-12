@@ -10,11 +10,11 @@ local p_values = require("prompt_values")
 
 
 -- == Check AIPACK Version
-if not aip.semver.compare(CTX.AIPACK_VERSION, ">=", "0.6.7-WIP") then
+if not aip.semver.compare(CTX.AIPACK_VERSION, ">=", "0.6.9") then
     print([[
-WARNING - This pack requires AIPACK_VERSION 0.6.7 or above, but " .. CTX.AIPACK_VERSION .. is currently install
+WARNING - This pack requires AIPACK_VERSION 0.6.9 or above, but " .. CTX.AIPACK_VERSION .. is currently install
 
-ACTION  - Update your aipack (to check your aipack version run 'aip -V')
+ACTION  - Update your aipack `cargo install aipack` (to check your aipack version run 'aip -V')
 ]])
     return aipack.skip("Wrong aip version")
 end
