@@ -12,13 +12,13 @@ function prep_prompt_file(input, options)
   elseif type(input) == "string" then
       -- remove the trailing /
       prompt_path =  input:gsub("/+$", "")
-      prompt_path = utils.text.ensure(input, {prefix = "./", suffix = "/prompt.md"})
+      prompt_path = aip.text.ensure(input, {prefix = "./", suffix = "/prompt.md"})
   else
       prompt_path = input.path
   end
 
   -- Get flag
-  local first_time = utils.path.exists(prompt_path) ~= true
+  local first_time = aip.path.exists(prompt_path) ~= true
 
   -- Create placeholder initial content
   -- (otherwise, the initial content will be)
@@ -26,14 +26,14 @@ function prep_prompt_file(input, options)
     initial_content = ""
   end
 
-  utils.file.ensure_exists(prompt_path, initial_content, {content_when_empty =  true})
+  aip.file.ensure_exists(prompt_path, initial_content, {content_when_empty =  true})
 
   -- open if first time
   if first_time then 
-    ok, err = pcall(utils.cmd.exec,"code", {prompt_path})
+    ok, err = pcall(aip.cmd.exec,"code", {prompt_path})
   end
 
-  return utils.file.load(prompt_path)
+  return aip.file.load(prompt_path)
 end
 
 
@@ -42,7 +42,7 @@ end
 --   - When content_is_default, it means that if no two parts, the content will be the first_part
 function prep_inst_and_content(content, separator, options) 
   local content_is_default = options and options.content_is_default or false
-  local first_part, second_part = utils.text.split_first(content, separator)
+  local first_part, second_part = aip.text.split_first(content, separator)
 
   local inst, content = nil, nil
   if second_part ~= nil then 
@@ -65,9 +65,9 @@ function load_file_refs(base_dir, refs)
   if refs ~= nil then 
     files = {}
     for _, file_ref in ipairs(refs) do
-        local file = utils.file.load(file_ref.path, {base_dir = base_dir})
+        local file = aip.file.load(file_ref.path, {base_dir = base_dir})
         -- Augment the file with the comment file path
-        file.comment_file_path = utils.code.comment_line(file.ext, "file: " .. file.path)
+        file.comment_file_path = aip.code.comment_line(file.ext, "file: " .. file.path)
         table.insert(files, file)
     end
   end
