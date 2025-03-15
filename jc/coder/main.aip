@@ -96,11 +96,9 @@ if base_dir ~= nil then
     end
     
     context_refs = aip.file.list(context_globs, {base_dir = base_dir})  
-    print("INFO: Context Files (from context_globs): " .. #context_refs)
 
     if meta.working_globs ~= nil then
         working_refs = aip.file.list(meta.working_globs, {base_dir = base_dir})  
-        print("INFO: Total Working Files (from working_globs): " .. #working_refs)
     end
 else
     print("INFO: No base_dir, update in place.")
@@ -145,7 +143,6 @@ if working_refs ~= nil and #working_refs > 0 then
     end
     input_base.context_refs = new_context_refs
 
-
     -- We reshape the inputs if needed
     if working_concurrency then 
         for _, working_ref in ipairs(working_refs) do 
@@ -159,6 +156,14 @@ if working_refs ~= nil and #working_refs > 0 then
 else
     inputs = { {base = input_base}}
 end
+
+if input_base.context_refs ~= nil then
+    print("INFO: Context Files (from context_globs): " .. #input_base.context_refs)
+end
+if working_refs ~= nil then
+    print("INFO: Working Files (from working_globs): " .. #working_refs)
+end
+
 
 -- == Compute the agent options
 options.model             = meta.model
@@ -313,7 +318,7 @@ Only write the files that need to be rewritten based on the user instruction, an
 
 {{#if data.working_files}}
 
-Here is the source files you need to work on. 
+Here is the working files you need to work on. 
 
 {{#each data.working_files}}
 
