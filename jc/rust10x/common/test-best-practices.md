@@ -3,7 +3,7 @@
 For Rust unit tests, here is a good template to follow:
 
 - Let's assume the file is `src/support/text.rs`
-    - or one that gets flattened to this, for example, if `src/support/text/mod.rs` does a `pub use text_common::*` for the file `strc/support/text/text_commond.rs`
+    - or one that gets flattened to this, for example, if `src/support/text/mod.rs` does a `pub use text_common::*` for the file `src/support/text/text_commond.rs`
 - This function to test would be `replace_markers(...)`
 - When the test is inside a binary/lib code file, with the `mod tests {` follow that layout:
 
@@ -70,7 +70,6 @@ mod tests {
     - `// endregion: --- Support` for additional helper functions used only during tests.
 
 - Always define a dedicated type alias for test results at the top of your tests:
-  
   - For instance:
     - `type Result<T> = core::result::Result<T, Box<dyn std::error::Error>>;`
   - This ensures uniform error handling and improves test readability.
