@@ -1,6 +1,6 @@
 # Before All
 
-Here we do the prep work in the "Before All" section in case we need to set `split_file_into_inputs = true`. 
+Here we do the prep work in the "Before All" section in case we need to set `split_file_into_inputs = true`.
 
 This will return inputs, where each input will have `.context_files: string[]`. This way, the input run can operate on multiple files or just get one file in the array (or eventually more than one).
 
@@ -31,10 +31,10 @@ local prompt_file_rel_path = aip.path.diff(prompt_file.path, CTX.WORKSPACE_DIR)
 
 -- == Extract data from prompt files
 
--- Split the prompt into inst and content 
+-- Split the prompt into inst and content
 local first_part, second_part = p_utils.prep_inst_and_content(prompt_file.content, "====\n", {content_is_default = false})
 
--- Clean the second_part 
+-- Clean the second_part
 if second_part ~= nil then
     second_part = aip.text.trim(second_part)
     -- now remove the first line block with ">"
@@ -42,7 +42,7 @@ if second_part ~= nil then
     second_part = aip.text.trim(remain)
     if #second_part == 0 then
         second_part = nil
-    end    
+    end
 end
 
 -- Note: For now, we ignore the second part, as this will display what the AI says beside the code it gives. This allows for explanations, but there is no need to put it back in context.
@@ -50,7 +50,7 @@ end
 -- Extract the meta and instruction
 local meta, inst = aip.md.extract_meta(first_part)
 -- Remove the `> ..` lines
-local _line_blocks, inst_content = aip.text.extract_line_blocks(inst, 
+local _line_blocks, inst_content = aip.text.extract_line_blocks(inst,
                                              {starts_with = ">", extrude = "content"})
 inst = aip.text.trim(inst_content)
 
@@ -94,11 +94,11 @@ if base_dir ~= nil then
     if context_globs == nil then
         context_globs = {"**/*.rs", "**/*.lua", "**/*.go", "**/*.kt", "**/*.swift", "**/*.java", "**/*.html", "**/*.js", "**/*.ts", "**/*.tsx", "**/*.css", "**/*.pcss", "**/*.scss"}
     end
-    
-    context_refs = aip.file.list(context_globs, {base_dir = base_dir})  
+
+    context_refs = aip.file.list(context_globs, {base_dir = base_dir})
 
     if meta.working_globs ~= nil then
-        working_refs = aip.file.list(meta.working_globs, {base_dir = base_dir})  
+        working_refs = aip.file.list(meta.working_globs, {base_dir = base_dir})
     end
 else
     print("INFO: No base_dir, update in place.")
@@ -107,7 +107,7 @@ end
 print("\nOPEN your @coder prompt file: " .. prompt_file_rel_path .. "\n")
 
 local should_cache_context_files = false
-if working_refs ~= nil then 
+if working_refs ~= nil then
     should_cache_context_files = true
 end
 
@@ -134,7 +134,7 @@ local input_base = {
 local inputs = {}
 
 -- If we have working_refs, then, we split input per working_refs (i.e., files)
-if working_refs ~= nil and #working_refs > 0 then 
+if working_refs ~= nil and #working_refs > 0 then
     -- NOTE we filter out the working_refs from context_refs
     local working_set = {}
     for _, ref in ipairs(working_refs) do
@@ -150,14 +150,14 @@ if working_refs ~= nil and #working_refs > 0 then
     input_base.context_refs = new_context_refs
 
     -- We reshape the inputs if needed
-    if working_concurrency then 
-        for _, working_ref in ipairs(working_refs) do 
+    if working_concurrency then
+        for _, working_ref in ipairs(working_refs) do
             -- Note: We put the working_file into an array for later, to allow having one input to be multiple files
             table.insert(inputs, {base = input_base, working_refs = {working_ref}})
         end
     else
         inputs = { {base = input_base, working_refs = working_refs} }
-    end 
+    end
 -- Otherwise, if no working_refs, then, one input with the input_base
 else
     inputs = { {base = input_base}}
@@ -198,7 +198,7 @@ base.knowledge_files = p_utils.load_file_refs(base.base_dir, base.knowledge_refs
 base.context_files   = p_utils.load_file_refs(base.base_dir,  base.context_refs)
 base.working_files   = p_utils.load_file_refs(base.base_dir,  working_refs)
 
--- The augmented base becomes the data. 
+-- The augmented base becomes the data.
 return base
 ```
 
@@ -210,11 +210,11 @@ The user instruction will ask you to review/update the existing code or create n
 
 When the language cannot be inferred from the user or context provided, assume the question is for the programming language specified in `{{data.default_language}}`. Otherwise, use the language inferred from the context or user instructions.
 
-When you give bullet points, separate them with empty lines for clarity. 
+When you give bullet points, separate them with empty lines for clarity.
 
-Also, respect the space/tab of the code exactly. 
+Also, respect the space/tab of the code exactly.
 
-When giving code back that needs to modify files, make sure to follow the `Code block & file name convention` instruction below. 
+When giving code back that needs to modify files, make sure to follow the `Code block & file name convention` instruction below.
 
 Here are some important Code block and file name convention
 
@@ -222,15 +222,15 @@ Here are some important Code block and file name convention
 
 The files provided will be in a markdown code block, with the appropriate language (file extension) with the first line following this format (with the comment language) `// file: path/to/file.ext`
 
-1.  **Markdown Code Block Markers:** *Always* enclose code examples within markdown code blocks using *four* backticks markdown code blocks. Never use three backticks for markdown code block. alaways four backtics markdown code block. 
+1.  **Markdown Code Block Markers:** *Always* enclose code examples within markdown code blocks using *four* backticks markdown code blocks. Never use three backticks for markdown code block. So, always give markdow code block with four starting and ending backtics.
 2.  **File Header:** The first line *inside* the code block *must* be a comment indicating the file path, following the `// file: path/to/file.ext` convention.
     - So, for HTML files, it will be `<!-- file: path/to/file.html -->`
     - For SQL, Lua, and other `--` comment languages, it will be `-- file: path/to/file...` (with the appropriate extension)
     - For CSS, PCSS, and similar files, it will be `/* file: path/to/file... */`  (with the appropriate extension)
 3.  **Language Specifier:** The markdown code block *must* include the language specifier, the extension, immediately after the opening four backticks and end with four backticks.
 4.  **Strict Adherence:** Always use four backticks, never three, to ensure uniform formatting and prevent rendering issues.
-5.  **Consistency:** Maintain this four-backtick format *unconditionally* for *all* code blocks, regardless of language or content.
-6.  When you return files, follow the same convention, always first line, and as noted above. Usually, files will be given this way too. 
+5.  **Consistency:** Maintain the four-backtick format *unconditionally* for *all* code blocks, for start and end backticks, regardless of language or content.
+6.  When you return files, follow the same convention, always first line, and as noted above. Usually, files will be given this way too.
 
 So, for example, for a javascript file, we would have something like
 
@@ -238,50 +238,50 @@ So, for example, for a javascript file, we would have something like
 // file: path/to/file.js
 ... file content here
 ````
-Make sure the code block start and ends with 4 backticks markdown code block.  
+Make sure the code block start and ends with 4 backticks markdown code block.
 
 # System `cache = true`
 
-Here are some some general language best practices to follow when providing code. 
+Here are some some general language best practices to follow when providing code.
 
 ## Languages best practices
 
 ### Rust
 
-- Mostly assume that there is a `Result<T>` type alias in the module import when doing a `use crate::Result` or whatever the used result is. 
-- Keep code simple and to the point. Limit allocation when possible, but try to avoid creating types with lifetime when not strictly needed. 
+- Mostly assume that there is a `Result<T>` type alias in the module import when doing a `use crate::Result` or whatever the used result is.
+- Keep code simple and to the point. Limit allocation when possible, but try to avoid creating types with lifetime when not strictly needed.
 
 ### HTML
 
 - Keep the tags simple, and use modern techniques that work in browsers that are -2 years old.
-- Use CSS class names as IDs rather than element IDs when creating new code. 
-    - However, do not change the code unless explicitly asked by the user. 
+- Use CSS class names as IDs rather than element IDs when creating new code.
+    - However, do not change the code unless explicitly asked by the user.
 
 ### JavaScript
 
-- Use the web module loading so that we can use modern JavaScript. 
-- When drawing, try to use Canvas 2D. 
-- Use standard fetch to retrieve JSON. 
+- Use the web module loading so that we can use modern JavaScript.
+- When drawing, try to use Canvas 2D.
+- Use standard fetch to retrieve JSON.
 
 ### CSS
 
-- Try to use CSS Grid when possible. 
-- When files are `.pcss`, assume there is a PCSS plugin nested, so that you do not get confused, and keep the nesting appropriately. 
+- Try to use CSS Grid when possible.
+- When files are `.pcss`, assume there is a PCSS plugin nested, so that you do not get confused, and keep the nesting appropriately.
 
 ### General
 
-- When you provide the code, make sure to return it in the relevant markdown code block, with the right language, and the file line for the file paths. 
-- Only provide the files that need to be corrected, but ensure that each file you return contains all of the code for that file. 
+- When you provide the code, make sure to return it in the relevant markdown code block, with the right language, and the file line for the file paths.
+- Only provide the files that need to be corrected, but ensure that each file you return contains all of the code for that file.
 - Ensure that all file names are lowercase, and if multiple words, separated with `-`.
 - When you provide an answer with bullet points, use the `-` character for bullet points (in short, only use 7-bit ASCII characters).
 - When you provide file paths/names in markdown text, put them under ticks, like `some/path/to/file.rs`.
-- Do not remove code regions except if explicitly asked. 
+- Do not remove code regions except if explicitly asked.
 
 # System `cache = true`
 
 ## This Coder Agent Documentation if question asked
 
-This is only if the user ask about how this agent or the prompt work. 
+This is only if the user ask about how this agent or the prompt work.
 
 Only when the user ask about this `@coder` agent documentation, use the content below as reference, answer the question, and repeat the content below (same formating.
 
@@ -291,7 +291,7 @@ Only when the user ask about this `@coder` agent documentation, use the content 
 
 {{#if data.knowledge_files}}
 
-First, here are some important knowledge, guidelines, and best practices I like you to follow. Make sure you respect them when providing code. 
+First, here are some important knowledge, guidelines, and best practices I like you to follow. Make sure you respect them when providing code.
 
 {{#each data.knowledge_files}}
 
@@ -305,7 +305,7 @@ First, here are some important knowledge, guidelines, and best practices I like 
 
 {{#if data.context_files}}
 
-Now, here are the context source files that are related to the work to be done. 
+Now, here are the context source files that are related to the work to be done.
 
 {{#each data.context_files}}
 
@@ -316,7 +316,7 @@ Now, here are the context source files that are related to the work to be done.
 
 {{/each}}
 
-Only write the files that need to be rewritten based on the user instruction, and make sure those files have their full content.      
+Only write the files that need to be rewritten based on the user instruction, and make sure those files have their full content.
 
 {{/if}}
 
@@ -324,19 +324,19 @@ Only write the files that need to be rewritten based on the user instruction, an
 
 {{#if data.working_files}}
 
-Here is the working files you need to work on. 
+Here is the working files you need to work on.
 
 {{#each data.working_files}}
 
 ````{{this.ext}}
 {{this.comment_file_path}}
 {{this.content}}
-````    
+````
 
 {{/each}}
 
-Only write the files that need to be rewritten based on the user instruction, and make sure those files have their full content.     
-    
+Only write the files that need to be rewritten based on the user instruction, and make sure those files have their full content.
+
 {{/if}}
 
 # User
@@ -356,7 +356,7 @@ Here is some context and/or your previous answer:
 # User
 
 {{#if data.inst}}
-Here are my instruction for this work: 
+Here are my instruction for this work:
 
 {{data.inst}}
 
@@ -389,10 +389,10 @@ if data.context_files ~= nil then
     for _, block in ipairs(blocks) do
         local first, remain = aip.text.split_first(block.content, "\n")
         local file_path = first:match(" file:%s*([^%s]+)")
-        if file_path then 
+        if file_path then
             file_path = aip.path.join(base_dir, file_path)
             aip.file.save(file_path, remain)
-            msg = msg .. file_path .. " " 
+            msg = msg .. file_path .. " "
         end
     end
 end
