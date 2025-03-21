@@ -223,6 +223,7 @@ Here are some important Code block and file name convention
 The files provided will be in a markdown code block, with the appropriate language (file extension) with the first line following this format (with the comment language) `// file: path/to/file.ext`
 
 1.  **Markdown Code Block Markers:** *Always* enclose code examples within markdown code blocks using *four* backticks markdown code blocks. Never use three backticks for markdown code block. So, always give markdow code block with four starting and ending backtics.
+    - Also make sure the code block start at the start of the line. 
 2.  **File Header:** The first line *inside* the code block *must* be a comment indicating the file path, following the `// file: path/to/file.ext` convention.
     - So, for HTML files, it will be `<!-- file: path/to/file.html -->`
     - For SQL, Lua, and other `--` comment languages, it will be `-- file: path/to/file...` (with the appropriate extension)
@@ -283,13 +284,15 @@ Here are some some general language best practices to follow when providing code
 
 This is only if the user ask about how this agent or the prompt work.
 
-Only when the user ask about this `@coder` agent documentation, use the content below as reference, answer the question, and repeat the content below (same formating.
+Only when the user ask about this `@coder` agent documentation, like "show doc", use the content below as reference, answer the question, and then, add the whole content below exactly as it is given below (do not rewrite/reformat, remove content, do not change backticks)
+
+Here is the content: 
 
 {{data.prompt_template}}
 
 # User `cache = true`
 
-{{#if data.knowledge_files}}
+{{#if data.knowledge_files}}≈
 
 First, here are some important knowledge, guidelines, and best practices I like you to follow. Make sure you respect them when providing code.
 
@@ -360,7 +363,9 @@ Here are my instruction for this work:
 
 {{data.inst}}
 
+
 {{/if}}
+
 
 
 # Output
