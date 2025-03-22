@@ -6,11 +6,11 @@ local prompt_template = [[
 
 # base_dir = "src"
 
-# context_globs = ["**/*.rs", "**/*.html", "**/*.js", "**/*.css"] # by default most language ext
+# context_globs = ["**/*.rs", "**/*.html", "**/*.js", "**/*.css"] # By default most language extension
 
-# working_globs   = ["**/mod.rs"]
+# working_globs       = ["**/mod.rs"]
 # working_concurrency = true
-# input_concurrency = 6
+# input_concurrency   = 6
 
 model_aliases = {pro = "claude-3-7-sonnet-latest", high = "o3-mini-high", low = "o3-mini-low", cheap = "gpt-4o-mini", fast = "gemini-2.0-flash"}
 
