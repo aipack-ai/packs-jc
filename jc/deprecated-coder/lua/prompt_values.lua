@@ -59,6 +59,26 @@ model_aliases = {pro = "claude-3-7-sonnet-latest", high = "o3-mini-high", low = 
 > Happy coding!
 ]]
 
+local deprecation_message = [[
+
+IMPORTANT: jc@coder has been moved to pro@coder
+
+Do the following:
+
+aip install pro@coder
+
+(optional)
+aip uninstall jc@coder
+
+Then, it works exactly the same:
+
+aip run pro@coder
+
+(Your new prompt file will be at `.aipack/.prompt/pro@coder/coder-prompt.md`)
+
+]]
+
 return {
-  prompt_template = prompt_template
+  prompt_template     = prompt_template,
+  deprecation_message = deprecation_message,
 }

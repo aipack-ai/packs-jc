@@ -1,14 +1,35 @@
-This is JC (Jeremy Chone)'s AI Packs (https://aipack.ai).
+# IMPORTANT:
 
-They're mostly about coding and can be used as a base for your own AI Packs.
+## `jc@coder` has been moved to `pro@coder`
 
-They are licensed under MIT or Apache 2 for maximum flexibility.
+(see [github.com/aipack-ai/packs-pro](https://github.com/aipack-ai/packs-pro))
 
-These can be a good base for your own pack/agent. If you have any questions, feel free to open an issue or start a discussion.
+Do the following:
+
+```sh
+aip install pro@coder
+
+# (optional)
+aip uninstall jc@coder
+```
+
+Then, it works exactly the same:
+
+```sh
+aip run pro@coder
+```
+
+(Your new prompt file will be at `.aipack/.prompt/pro@coder/coder-prompt.md`)
+
+## Future of `jc@` packs
+
+The `jc@` namespace will be for more personal [AI packs](https://aipack.ai) that are worthwhile to share, perhaps with some experimental or work-in-progress packs.
+
+But all production coding packs will now be under [pro@](https://github.com/aipack-ai/packs-pro).
 
 ### Contribution
 
-Except for finding obvious bugs or typos, it's recommended that you open an issue to describe the scope before working and submitting a PR for a feature enhancement.
+Except for finding obvious bugs or typos, it's recommended that you open an issue to describe the scope before working on and submitting a PR for a feature enhancement.
 
 <br />
 
