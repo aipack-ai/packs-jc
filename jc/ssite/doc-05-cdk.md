@@ -235,6 +235,14 @@ While `ssite publish` is the primary tool, manual synchronization can be perform
 ss3 --profile __DEPLOY_USER__ cp _site/ s3://__WEBSITE_ID__/site -r --over etag --noext-ct "text/html" --region us-east-1
 ```
 
+## Troubleshooting IAM Permissions
+
+If you encounter an error such as `User: arn:aws:iam::... is not authorized to perform: ...`, it indicates that the IAM user or role used for the operation lacks the required permissions.
+
+- **Check Profile**: Verify that the `--profile` used in the command matches the intended user (e.g., `__CDK_USER__` for infrastructure or `__DEPLOY_USER__` for publishing).
+- **Policy Assignment**: Ensure the IAM user has the necessary policies attached. For CDK deployments, this often requires broad permissions (such as `AdministratorAccess` or specific policies for S3, CloudFront, Route 53, IAM, and ACM).
+- **Region Issues**: Sometimes authorization errors occur if the resource is in a different region than the one specified in the profile or stack configuration.
+
 ## External Integrations
 
 ### Substack Custom Domain
