@@ -6,6 +6,8 @@ This document defines the configuration and workflow for using `ssite` to orches
 
 `ssite` is the high-level tool that bridges the gap between build artifacts (in `content/`) and the final distributed site (in `_site/`). It handles:
 - Static asset management.
+- Page framing with `_frame.html` templates.
+- Reusable `part/` fragments for shared page sections.
 - Development runner orchestration (watchers, servers).
 - Deployment to cloud storage (e.g., S3).
 
@@ -30,6 +32,97 @@ The `[source]` section defines where `ssite` looks for input and where it writes
 content_dir = "content/"
 dist_dir = "_site"
 ```
+
+### Page Framing with `_frame.html`
+
+`ssite` supports a frame model for pages that are authored as Markdown or HTML fragments. A frame is an `_frame.html` file that acts as the template for nearby content.
+
+#### Eligible Pages
+
+The following files are wrapped by a frame:
+
+- `.md` files, after they are rendered to HTML.
+- `.html` files that do not start with a top `<!doctype html>`.
+
+An `.html` file that starts with `<!doctype html>` is treated as a complete standalone HTML document, so it is not wrapped by `_frame.html`.
+
+#### Closest Frame Lookup
+
+When a page needs a frame, `ssite` looks for the closest `_frame.html` file, starting in the page directory and then walking up parent directories inside `content_dir`.
+
+For example:
+
+```text
+content/
+  _frame.html
+  index.md
+  docs/
+    _frame.html
+    guide.md
+```
+
+In this structure:
+
+- `content/index.md` is wrapped by `content/_frame.html`.
+- `content/docs/guide.md` is first wrapped by `content/docs/_frame.html`.
+
+This allows each section of a site to define its own local template while still sharing a broader site frame.
+
+#### Cascading Frames
+
+Frames can be cascaded. If an `_frame.html` file does not start with `<!doctype html>`, that frame is itself treated as an HTML fragment and is wrapped by the closest parent `_frame.html`.
+
+For example:
+
+```text
+content/
+  _frame.html
+  docs/
+    _frame.html
+    guide.md
+```
+
+If `content/docs/_frame.html` does not start with `<!doctype html>`, the final output for `content/docs/guide.md` is built in this order:
+
+1. Render `guide.md` to HTML.
+2. Wrap the rendered page with `content/docs/_frame.html`.
+3. Wrap that result with `content/_frame.html`.
+
+The top-level site frame should usually start with `<!doctype html>` so the cascade ends in a complete HTML document.
+
+#### Parts with `part/`
+
+The `part/` pattern is used for reusable HTML fragments, commonly headers, footers, nav blocks, and other shared page sections. These fragments are intended to be pulled into frames so that common layout pieces are maintained in one place.
+
+A typical structure is:
+
+```text
+content/
+  _frame.html
+  part/
+    header.html
+    footer.html
+  docs/
+    _frame.html
+    guide.md
+```
+
+The root `_frame.html` can use shared parts such as `part/header.html` and `part/footer.html` to provide the site shell. Section frames, such as `content/docs/_frame.html`, can then add section-specific layout while still being wrapped by the parent frame.
+
+Use these conventions for parts:
+
+- Keep `part/` files as fragments, not complete HTML documents.
+- Do not start shared parts with `<!doctype html>` unless the file is intentionally meant to be a standalone document.
+- Put global parts under the root `content/part/`.
+- Put section-specific parts next to the frame that owns them when a section needs different header, footer, nav, or sidebar content.
+- Prefer frames plus parts for shared layout instead of duplicating headers and footers across pages.
+
+Together, cascading `_frame.html` files and `part/` fragments provide a lightweight template system:
+
+- Pages provide the unique content.
+- Local frames provide section layout.
+- Parent frames provide the full document shell.
+- Parts provide reusable header, footer, and shared UI fragments.
 
 ### Development Runners
 
