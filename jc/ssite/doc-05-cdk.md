@@ -11,6 +11,14 @@ Standard placeholders used in this documentation:
 - **Domain**: `example.com`
 - **Stack/Bucket ID**: `site-example-com`
 
+## Prerequisites
+
+Before starting, ensure that the AWS CDK CLI is installed globally on your machine.
+
+```sh
+npm install -g aws-cdk
+```
+
 ## Initial Project Setup
 
 To set up the CDK environment, follow these steps. Running `cdk init` will generate the standard boilerplate, including `cdk.json` with recommended context flags.
@@ -207,10 +215,14 @@ Standard commands for managing the infrastructure stack.
 ```sh
 # Initial setup (one-time per account/region)
 cdk bootstrap --profile __CDK_USER__
+```
 
+```sh
 # Generate CloudFormation template
 cdk synth
+```
 
+```sh
 # Deploy the infrastructure
 cdk deploy --profile __CDK_USER__
 ```
