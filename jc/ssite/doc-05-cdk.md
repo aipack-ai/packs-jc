@@ -105,9 +105,9 @@ Define the project-specific constants in a central location.
 
 ```typescript
 export const AWS_ACCOUNT_NUMBER = "__AWS_ACCOUNT_NUMBER__";
+export const STACK_NAME = "__STACK_NAME__";
 export const WEBSITE_ID = "__WEBSITE_ID__";
 export const SITE_BUCKET_NAME = "__SITE_BUCKET_NAME__";
-export const STACK_NAME = "__STACK_NAME__";
 export const DOMAIN_NAME = "__DOMAIN_NAME__";
 export const DEPLOY_USER = "__DEPLOY_USER__";
 export const CDK_USER = "__CDK_USER__";
@@ -128,9 +128,9 @@ import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3Deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { AWS_ACCOUNT_NUMBER, DEPLOY_USER, DOMAIN_NAME, WEBSITE_ID } from './config';
+import { AWS_ACCOUNT_NUMBER, DEPLOY_USER, DOMAIN_NAME, SITE_BUCKET_NAME, STACK_NAME, WEBSITE_ID } from './config';
 
-export const STACK_ID = `${WEBSITE_ID}-stack`;
+export const STACK_ID = STACK_NAME;
 
 export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -141,11 +141,14 @@ export class CdkStack extends cdk.Stack {
       }
     });
 
-    const bucketName = WEBSITE_ID;
+    const bucketName = SITE_BUCKET_NAME;
     
     // -- S3 Bucket
     // Here we assume already created
     const siteBucket = s3.Bucket.fromBucketName(this, 'SiteBucket', bucketName);
+    
+    // Here if we want this tack to manage the S3, but simpler to create by hand. 
+    // NOTE - CDK cannot update bucket policy of an imported bucket. You will need to update the policy manually instead.
     // const siteBucket = new s3.Bucket(this, bucketName, {
     //   bucketName: bucketName,
     //   websiteIndexDocument: 'index.html',
@@ -159,10 +162,11 @@ export class CdkStack extends cdk.Stack {
       destinationBucket: siteBucket,
     });
 
-    // Grant access to the deployment user
+    // Grant access to the deployment user to s3
     const deployUser = iam.User.fromUserArn(this, 'DeployUser', `arn:aws:iam::${AWS_ACCOUNT_NUMBER}:user/${DEPLOY_USER}`);
     siteBucket.grantReadWrite(deployUser);
 
+		// -- Route 53 and Certificates
     const hostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
       domainName: DOMAIN_NAME,
     });
@@ -172,11 +176,15 @@ export class CdkStack extends cdk.Stack {
       validation: certificatemanager.CertificateValidation.fromDns(hostedZone),
     });
 
+		// -- CloudFront Edge Function
+		// Handles URI rewrites for clean URLs (e.g., /path to /path.html).
     const cfFunction = new cloudFront.Function(this, 'CFFunctionSiteBase', {
       functionName: `${WEBSITE_ID}-uri-rewrite`,
       code: cloudFront.FunctionCode.fromFile({ filePath: 'cloudfront-functions/site_name_cf_function_01.js' }),
     });
 
+		// -- CloudFront Distribution
+		// Sets up global CDN with S3 origin and OAC security.
     const distribution = new cloudFront.Distribution(this, 'SiteDistribution', {
       defaultBehavior: {
         functionAssociations: [{
@@ -195,6 +203,8 @@ export class CdkStack extends cdk.Stack {
       comment: `${WEBSITE_ID} distribution`,
     });
 
+		// -- DNS Records
+		// Alias record pointing the domain to the CloudFront distribution.
     new route53.ARecord(this, 'SiteAliasRecord', {
       zone: hostedZone,
       target: route53.RecordTarget.fromAlias(new route53Targets.CloudFrontTarget(distribution)),
@@ -242,9 +252,9 @@ cdk deploy --profile __CDK_USER__
 
 # -- misc command
 # list resources for that statck
-aws cloudformation list-stack-resources --stack-name _STACK_NAME_ --profile __CDK_USER__
+aws cloudformation list-stack-resources --stack-name __STACK_NAME__ --profile __CDK_USER__
 
-aws cloudformation describe-stacks --stack-name _STACK_NAME_ --output text --profile __CDK_USER__ --query 'Stacks[0].StackId'
+aws cloudformation describe-stacks --stack-name __STACK_NAME__ --output text --profile __CDK_USER__ --query 'Stacks[0].StackId'
 ```
 
 ### Manual Deployment (S3 Sync)
@@ -254,7 +264,7 @@ While `ssite publish` is the primary tool, manual synchronization can be perform
 ```sh
 # Sync full site to S3 prefix
 # --noext-ct "text/html" ensures that extensionless files (clean URLs) are served as HTML
-ss3 --profile __DEPLOY_USER__ cp _site/ s3://__WEBSITE_ID__/site -r --over etag --noext-ct "text/html" --region us-east-1
+ss3 --profile __DEPLOY_USER__ cp _site/ s3://__SITE_BUCKET_NAME__/site -r --over etag --noext-ct "text/html" --region us-east-1
 ```
 
 ## Troubleshooting IAM Permissions
@@ -281,6 +291,8 @@ If integrating a Substack blog under a subdomain (e.g., `news.example.com`):
 
 The following S3 bucket policy allows the CloudFront distribution to securely access content while keeping the bucket private.
 
+This will need to be set by hand if bucket create manually. 
+
 ```json
 {
     "Version": "2012-10-17",
@@ -291,7 +303,7 @@ The following S3 bucket policy allows the CloudFront distribution to securely ac
                 "Service": "cloudfront.amazonaws.com"
             },
             "Action": "s3:GetObject",
-            "Resource": "arn:aws:s3:::__WEBSITE_ID__/*",
+            "Resource": "arn:aws:s3:::__SITE_BUCKET_NAME__/*",
             "Condition": {
                 "StringEquals": {
                     "AWS:SourceArn": "arn:aws:cloudfront::__AWS_ACCOUNT_ID__:distribution/__CLOUDFRONT_DIST_ID__"
