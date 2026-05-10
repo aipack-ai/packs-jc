@@ -106,6 +106,8 @@ Define the project-specific constants in a central location.
 ```typescript
 export const AWS_ACCOUNT_NUMBER = "__AWS_ACCOUNT_NUMBER__";
 export const WEBSITE_ID = "__WEBSITE_ID__";
+export const SITE_BUCKET_NAME = "__SITE_BUCKET_NAME__";
+export const STACK_NAME = "__STACK_NAME__";
 export const DOMAIN_NAME = "__DOMAIN_NAME__";
 export const DEPLOY_USER = "__DEPLOY_USER__";
 export const CDK_USER = "__CDK_USER__";
@@ -141,8 +143,15 @@ export class CdkStack extends cdk.Stack {
 
     const bucketName = WEBSITE_ID;
     
-    // Create or import the bucket
+    // -- S3 Bucket
+    // Here we assume already created
     const siteBucket = s3.Bucket.fromBucketName(this, 'SiteBucket', bucketName);
+    // const siteBucket = new s3.Bucket(this, bucketName, {
+    //   bucketName: bucketName,
+    //   websiteIndexDocument: 'index.html',
+    //   publicReadAccess: false, // S3 should not be directly accessible
+    //   removalPolicy: cdk.RemovalPolicy.RETAIN, // DESTROY Only for development; use RETAIN for production
+    
 
     // Ensure the /site folder exists
     new s3Deploy.BucketDeployment(this, 'CreateSiteFolder', {
