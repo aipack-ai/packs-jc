@@ -49,9 +49,9 @@ The `[publish]` section contains the credentials and target for deployment.
 ```toml
 [publish]
 bucket_type = "s3"
-bucket_name = "your-bucket-name"
+bucket_name = "jc-site-aipack-ai"
 bucket_cred_type = "profile"
-bucket_cred_profile = "your-aws-profile"
+bucket_cred_profile = "jc-user"
 ```
 
 ## Development Workflow

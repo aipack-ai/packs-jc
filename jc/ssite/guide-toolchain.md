@@ -46,7 +46,7 @@ The core toolchain relies on three primary packages:
 
 ## JavaScript Bundling (Rolldown)
 
-`rolldown` is used to bundle `src/main.ts` into `content/js/all-bundle.js`. The configuration uses the `iife` format for browser compatibility and includes sourcemaps.
+`rolldown` is used to bundle `src/main.ts` into `content/js/bundle.js`. The configuration uses the `iife` format for browser compatibility and includes sourcemaps.
 
 ### rolldown.config.js
 
@@ -58,7 +58,7 @@ export default defineConfig({
   platform: "browser",
   tsconfig: new URL("./tsconfig.json", import.meta.url).pathname,
   output: {
-    file: new URL("./content/js/all-bundle.js", import.meta.url).pathname,
+    file: new URL("./content/js/bundle.js", import.meta.url).pathname,
     format: "iife",
     sourcemap: true,
   },
