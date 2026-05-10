@@ -213,16 +213,14 @@ function handler(event) {
 Standard commands for managing the infrastructure stack.
 
 ```sh
+cd cdk 
+
 # Initial setup (one-time per account/region)
 cdk bootstrap --profile __CDK_USER__
-```
 
-```sh
 # Generate CloudFormation template
 cdk synth
-```
 
-```sh
 # Deploy the infrastructure
 cdk deploy --profile __CDK_USER__
 ```
