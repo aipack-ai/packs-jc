@@ -17,7 +17,14 @@ Before starting, ensure that the AWS CDK CLI is installed globally on your machi
 
 ```sh
 npm install -g aws-cdk
+
+# Configure the deployment profile
+aws configure --profile __CDK_USER__
 ```
+
+The simplest way to authenticate is using an IAM user with an Access Key and Secret Key. Configure your local environment using the AWS CLI:
+
+This creates or updates the `~/.aws/credentials` and `~/.aws/config` files.
 
 ## Initial Project Setup
 
@@ -221,8 +228,14 @@ cdk bootstrap --profile __CDK_USER__
 # Generate CloudFormation template
 cdk synth
 
-# Deploy the infrastructure
+# Deploy
 cdk deploy --profile __CDK_USER__
+
+# -- misc command
+# list resources for that statck
+aws cloudformation list-stack-resources --stack-name _STACK_NAME_ --profile __CDK_USER__
+
+aws cloudformation describe-stacks --stack-name _STACK_NAME_ --output text --profile __CDK_USER__ --query 'Stacks[0].StackId'
 ```
 
 ### Manual Deployment (S3 Sync)
@@ -239,6 +252,7 @@ ss3 --profile __DEPLOY_USER__ cp _site/ s3://__WEBSITE_ID__/site -r --over etag 
 
 If you encounter an error such as `User: arn:aws:iam::... is not authorized to perform: ...`, it indicates that the IAM user or role used for the operation lacks the required permissions.
 
+ - **Check Credentials**: Verify that your Access Keys in `~/.aws/credentials` are correct.
 - **Check Profile**: Verify that the `--profile` used in the command matches the intended user (e.g., `__CDK_USER__` for infrastructure or `__DEPLOY_USER__` for publishing).
 - **Policy Assignment**: Ensure the IAM user has the necessary policies attached. For CDK deployments, this often requires broad permissions (such as `AdministratorAccess` or specific policies for S3, CloudFront, Route 53, IAM, and ACM).
 - **Region Issues**: Sometimes authorization errors occur if the resource is in a different region than the one specified in the profile or stack configuration.
