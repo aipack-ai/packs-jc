@@ -8,6 +8,7 @@ This document defines the CSS structure, naming conventions, and best practices 
 - **Variable-First**: No hardcoded colors or dimensions in component files; use variables.
 - **Native Nesting**: Use standard CSS nesting for hierarchy and scoping.
 - **Semantic Layers**: Separate variables (color, layout), base styles, common components, and page-specific overrides.
+- **REM Units Everywhere**: Use `rem` for all dimensions, spacing, and typography so scaling is centralized. `base.css` sets `:root { font-size: 16px; }` as the application baseline.
 
 ## File Structure
 
@@ -50,6 +51,7 @@ Example of semantic mapping:
 ### Layout Variables (`var-layout.css`)
 
 Used for maintaining consistent spacing and page widths.
+All layout dimensions must use `rem` units to keep sizing consistent with the root baseline.
 
 ```css
 :root {
@@ -115,8 +117,13 @@ header {
 ### Base Styles (`base.css`)
 
 Focus on normalization and global defaults. Ensure `box-sizing: border-box` is applied to all elements.
+Set the root font size to `16px` and express all other sizing with `rem`.
 
 ```css
+:root {
+  font-size: 16px;
+}
+
 * {
   box-sizing: border-box;
   min-width: 0;
