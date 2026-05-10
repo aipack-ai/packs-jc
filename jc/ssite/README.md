@@ -22,6 +22,9 @@ This set of documents defines the standards and best practices for creating and 
 - **[guide-dom-native.md](guide-dom-native.md)**: dom-native Integration
   Standards for `BaseHTMLElement`, custom element naming, and event/hub binding.
 
+- **[guide-css.md](guide-css.md)**: CSS Architecture
+  Standards for modular CSS, design tokens, and nesting.
+
 - **[guide-ssite.md](guide-ssite.md)**: ssite Orchestration
   Deployment and local development workflows using `ssite.toml`.
 
