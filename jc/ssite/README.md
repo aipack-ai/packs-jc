@@ -2,7 +2,7 @@
 
 ## Overview
 
-This set of documents defines the standards and best practices for creating and maintaining sites using the `aipack-site` architecture. This architecture is built on a "DOM-first" and "Native-first" philosophy, leveraging modern browser primitives and a high-performance, minimal toolchain.
+This set of documents defines the standards and best practices for creating and maintaining sites `ssite` (rust cli) and other best practices. This architecture is built on a "DOM-first" and "Native-first" philosophy, leveraging modern browser primitives and a high-performance, minimal toolchain such as `rolldown`, `lightningcss`.
 
 ### Core Goals
 
@@ -13,19 +13,19 @@ This set of documents defines the standards and best practices for creating and 
 
 ## Documentation Map
 
-- **[doc-structure.md](doc-structure.md)**: Project Directory Structure
+- **[guide-structure.md](guide-structure.md)**: Project Directory Structure
   Overview of the root layout, the dual role of the `content/` directory, and git management.
 
-- **[doc-toolchain.md](doc-toolchain.md)**: Build Toolchain
+- **[guide-toolchain.md](guide-toolchain.md)**: Build Toolchain
   Configuration for `rolldown`, `lightningcss`, and the `scripts/build.js` orchestrator.
 
-- **[doc-dom-native.md](doc-dom-native.md)**: dom-native Integration
+- **[guide-dom-native.md](guide-dom-native.md)**: dom-native Integration
   Standards for `BaseHTMLElement`, custom element naming, and event/hub binding.
 
-- **[doc-ssite.md](doc-ssite.md)**: ssite Orchestration
+- **[guide-ssite.md](guide-ssite.md)**: ssite Orchestration
   Deployment and local development workflows using `ssite.toml`.
 
-- **[doc-cdk.md](doc-cdk.md)**: Infrastructure as Code (AWS CDK)
+- **[guide-cdk.md](guide-cdk.md)**: Infrastructure as Code (AWS CDK)
   Infrastructure provisioning for S3, CloudFront, and Route 53.
 
 ## Runtime Requirement
