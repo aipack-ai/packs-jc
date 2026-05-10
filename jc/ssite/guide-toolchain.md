@@ -14,7 +14,9 @@ The core toolchain relies on three primary packages:
 - **lightningcss**: A fast CSS transformer and bundler.
 - **chokidar**: Used for watching CSS files in the development loop.
 
-### package.json Scripts
+### package.json Wiring
+
+The root `package.json` must expose the build scripts that `ssite` runners call. Keep the CSS build behind `scripts/build.js`; do not call Lightning CSS directly from `ssite.toml`.
 
 ```json
 {
@@ -22,6 +24,12 @@ The core toolchain relies on three primary packages:
   "scripts": {
     "build": "node scripts/build.js",
     "watch": "node scripts/build.js -w"
+  },
+  "devDependencies": {
+    "chokidar": "^4.0.0",
+    "lightningcss": "^1.32.0",
+    "rolldown": "^1.0.0-rc.8",
+    "typescript": "^5.6.3"
   }
 }
 ```
@@ -68,6 +76,8 @@ export default defineConfig({
 ## CSS Processing (Lightning CSS)
 
 Styles are processed from `css/main.css` to `content/css/all-bundle.css`. This handles nesting, browser prefixes, and bundling of imported CSS files.
+
+The Lightning CSS configuration file must be named `lightningcss.config.js` and must live at the project root. `scripts/build.js` invokes this root file for both one-time builds and watch-triggered CSS rebuilds.
 
 ### lightningcss.config.js
 
@@ -118,6 +128,54 @@ The orchestrator provides two primary modes:
 - **Watch Mode**:
     - Delegates JS/TS watching to `rolldown -w`.
     - Uses `chokidar` to watch the `css/` directory and re-trigger the CSS build script.
+
+The build script must reference the root `lightningcss.config.js` explicitly:
+
+```javascript
+import { spawn } from "node:child_process";
+import chokidar from "chokidar";
+import { buildCommands, runCommand } from "./build-utils.js";
+
+const ROLLDOWN_CONFIG = "rolldown.config.js";
+const LIGHTNINGCSS_CONFIG = "lightningcss.config.js";
+const CSS_WATCH_ROOTS = ["css"];
+const DEBOUNCE_MS = 300;
+const isWatching = process.argv.includes("-w") || process.argv.includes("--watch");
+
+function runBuildOnce() {
+  return buildCommands([
+    ["rolldown", ["-c", ROLLDOWN_CONFIG]],
+    ["node", [LIGHTNINGCSS_CONFIG]],
+  ]);
+}
+
+function buildCss() {
+  runCommand("node", [LIGHTNINGCSS_CONFIG]);
+}
+
+function runWatchMode() {
+  buildCss();
+
+  const rolldownProc = spawn("rolldown", ["-c", ROLLDOWN_CONFIG, "-w"], { stdio: "inherit" });
+
+  let cssTimer = null;
+  const cssWatcher = chokidar.watch(CSS_WATCH_ROOTS, { ignoreInitial: true });
+  cssWatcher.on("all", () => {
+    clearTimeout(cssTimer);
+    cssTimer = setTimeout(buildCss, DEBOUNCE_MS);
+  });
+
+  const shutdown = () => {
+    rolldownProc.kill();
+    cssWatcher.close();
+  };
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
+}
+
+if (isWatching) runWatchMode();
+else process.exit(runBuildOnce());
+```
 
 ### scripts/build-utils.js
 
