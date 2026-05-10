@@ -37,6 +37,20 @@ dist_dir = "_site"
 
 `ssite` supports a frame model for pages that are authored as Markdown or HTML fragments. A frame is an `_frame.html` file that acts as the template for nearby content.
 
+Frames place the rendered page body with the `INCLUDE_CONTENT` token and can include reusable parts with `INCLUDE_PART(...)`.
+
+For example:
+
+```html
+<main>
+  <section class="page-content">
+    INCLUDE_CONTENT
+  </section>
+</main>
+
+INCLUDE_PART(part/footer.part.html)
+```
+
 #### Eligible Pages
 
 The following files are wrapped by a frame:
@@ -100,14 +114,14 @@ A typical structure is:
 content/
   _frame.html
   part/
-    header.html
-    footer.html
+    header.part.html
+    footer.part.html
   docs/
     _frame.html
     guide.md
 ```
 
-The root `_frame.html` can use shared parts such as `part/header.html` and `part/footer.html` to provide the site shell. Section frames, such as `content/docs/_frame.html`, can then add section-specific layout while still being wrapped by the parent frame.
+The root `_frame.html` can use shared parts such as `INCLUDE_PART(part/header.part.html)` and `INCLUDE_PART(part/footer.part.html)` to provide the site shell. Section frames, such as `content/docs/_frame.html`, can then add section-specific layout while still being wrapped by the parent frame.
 
 Use these conventions for parts:
 
