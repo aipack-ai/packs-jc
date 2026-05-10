@@ -93,10 +93,11 @@ The entry point for the CDK application.
 ```typescript
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { CdkStack, STACK_ID } from '../lib/cdk-stack';
+import { CdkStack } from '../lib/cdk-stack';
+import { STACK_NAME } from '../lib/config';
 
 const app = new cdk.App();
-new CdkStack(app, STACK_ID, {});
+new CdkStack(app, STACK_NAME, {});
 ```
 
 ### 3. Create lib/config.ts
@@ -128,9 +129,7 @@ import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as s3Deploy from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { AWS_ACCOUNT_NUMBER, DEPLOY_USER, DOMAIN_NAME, SITE_BUCKET_NAME, STACK_NAME, WEBSITE_ID } from './config';
-
-export const STACK_ID = STACK_NAME;
+import { AWS_ACCOUNT_NUMBER, DEPLOY_USER, DOMAIN_NAME, SITE_BUCKET_NAME, WEBSITE_ID } from './config';
 
 export class CdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -147,7 +146,7 @@ export class CdkStack extends cdk.Stack {
     // Here we assume already created
     const siteBucket = s3.Bucket.fromBucketName(this, 'SiteBucket', bucketName);
     
-    // Here if we want this tack to manage the S3, but simpler to create by hand. 
+    // Here if we want this stack to manage the S3, but simpler to create by hand. 
     // NOTE - CDK cannot update bucket policy of an imported bucket. You will need to update the policy manually instead.
     // const siteBucket = new s3.Bucket(this, bucketName, {
     //   bucketName: bucketName,
@@ -247,11 +246,14 @@ cdk bootstrap --profile __CDK_USER__
 # Generate CloudFormation template
 cdk synth
 
+# Show the diff with remote
+cdk diff --profile __CDK_USER__
+
 # Deploy
 cdk deploy --profile __CDK_USER__
 
 # -- misc command
-# list resources for that statck
+# list resources for that stack
 aws cloudformation list-stack-resources --stack-name __STACK_NAME__ --profile __CDK_USER__
 
 aws cloudformation describe-stacks --stack-name __STACK_NAME__ --output text --profile __CDK_USER__ --query 'Stacks[0].StackId'
