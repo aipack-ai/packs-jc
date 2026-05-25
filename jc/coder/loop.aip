@@ -14,6 +14,14 @@ local stage = input.stage            -- "pre" or "post"
 local workbench = input.coder_workbench
 local agent_config = input.agent_config
 
+-- Compute common values once
+local loop_dir = nil
+local prompt_path = nil
+if workbench ~= nil then
+  loop_dir = workbench.dir .. "/loop"
+  prompt_path = loop_dir .. "/next_prompt.md"
+end
+
 -- ---- START (pre) stage ----
 if stage == "pre" then
 
@@ -36,11 +44,26 @@ if stage == "pre" then
   end
 
   -- Workbench present: set up loop directory and inject <NEXT_PROMPT> guidance
-  local loop_dir = workbench.dir .. "/loop"
   aip.file.ensure_dir(loop_dir)
-
-  local prompt_path = loop_dir .. "/next_prompt.md"
   aip.file.ensure_exists(prompt_path, "")
+
+  -- Ensure this agent is registered for the end event as well
+  local next_agents = input.sub_agents_next or {}
+  local new_next = {}
+  local found_in_end = false
+  for _, item in ipairs(next_agents) do
+    table.insert(new_next, item)
+    if item.name == agent_config.name then
+      found_in_end = true
+    end
+  end
+  if not found_in_end then
+    table.insert(new_next, {
+      name = agent_config.name,
+      enabled = true,
+      on = "end",
+    })
+  end
 
   -- Append loop usage instruction to the coder prompt
   local loop_instruction = "When you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
@@ -58,6 +81,7 @@ if stage == "pre" then
 
   return {
     coder_prompt = new_prompt,
+    sub_agents_next = new_next,
     success = true,
   }
 
@@ -69,8 +93,6 @@ elseif stage == "post" then
     return { success = true, coder_redo = false }
   end
 
-  local loop_dir = workbench.dir .. "/loop"
-  local prompt_path = loop_dir .. "/next_prompt.md"
   aip.file.ensure_dir(loop_dir)
   aip.file.ensure_exists(prompt_path, "")
 
