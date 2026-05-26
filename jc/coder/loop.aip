@@ -14,6 +14,112 @@ local stage = input.stage            -- "pre" or "post"
 local workbench = input.coder_workbench
 local agent_config = input.agent_config
 
+local function has_end_event(config)
+  if config == nil then
+    return false
+  end
+
+  local events = config.on
+  if events == "end" then
+    return true
+  end
+
+  if type(events) == "table" then
+    for _, event in ipairs(events) do
+      if event == "end" then
+        return true
+      end
+    end
+  end
+
+  return false
+end
+
+local function events_with_end(events)
+  if events == nil then
+    return { "start", "end" }
+  end
+
+  if events == "end" then
+    return events
+  end
+
+  if type(events) == "table" then
+    local updated = {}
+    local has_end = false
+    for _, event in ipairs(events) do
+      table.insert(updated, event)
+      if event == "end" then
+        has_end = true
+      end
+    end
+    if not has_end then
+      table.insert(updated, "end")
+    end
+    return updated
+  end
+
+  return { events, "end" }
+end
+
+local function same_agent(config)
+  return config ~= nil
+    and agent_config ~= nil
+    and config.name == agent_config.name
+end
+
+local function copy_table(value)
+  local result = {}
+  for key, item in pairs(value or {}) do
+    result[key] = item
+  end
+  return result
+end
+
+local function sub_agents_with_end_registration()
+  if agent_config == nil or agent_config.name == nil then
+    return nil
+  end
+
+  local source = {}
+  if input.coder_params ~= nil and type(input.coder_params.sub_agents) == "table" then
+    source = input.coder_params.sub_agents
+  end
+
+  local updated = {}
+  local changed = false
+  local found_self = false
+  for _, config in ipairs(source) do
+    if type(config) == "table" and same_agent(config) then
+      found_self = true
+      if has_end_event(config) then
+        table.insert(updated, config)
+      else
+        local next_config = copy_table(config)
+        next_config.on = events_with_end(next_config.on)
+        table.insert(updated, next_config)
+        changed = true
+      end
+    else
+      table.insert(updated, config)
+    end
+  end
+
+  if found_self then
+    if changed then
+      return updated
+    end
+    return nil
+  end
+
+  local end_config = copy_table(agent_config)
+  end_config.on = events_with_end(end_config.on)
+  end_config.enabled = value_or(end_config.enabled, true)
+  table.insert(updated, end_config)
+
+  return updated
+end
+
 -- Compute common values once
 local loop_dir = nil
 local prompt_path = nil
@@ -36,7 +142,7 @@ if stage == "pre" then
   aip.file.ensure_dir(loop_dir)
   aip.file.ensure_exists(prompt_path, "")
 
-  local loop_instruction = "When you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
+  local loop_instruction = "\n\n---\nLoop instruction:\nWhen you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
   local new_prompt = value_or(input.coder_prompt, "") .. loop_instruction
 
   -- Load next prompt file and possibly replace current instruction
@@ -50,6 +156,18 @@ if stage == "pre" then
   end
 
   aip.run.pin("loop-start", "Loop instruction appended to coder prompt.")
+
+  local updated_sub_agents = sub_agents_with_end_registration()
+  if updated_sub_agents ~= nil then
+    aip.run.pin("loop-start-end", "Loop sub-agent registered for the end event.")
+    return {
+      coder_params = {
+        sub_agents = updated_sub_agents,
+      },
+      coder_prompt = new_prompt,
+      success = true,
+    }
+  end
 
   return {
     coder_prompt = new_prompt,
@@ -111,135 +229,4 @@ else
   return { success = true }
 end
 
-```
--- Loop-aware sub-agent for pro@coder
--- Handles start (pre) and end (post) events to manage a prompt loop via <NEXT_PROMPT> tags
-
-local stage = input.stage            -- "pre" or "post"
-local workbench = input.coder_workbench
-local agent_config = input.agent_config
-
--- Compute common values once
-local loop_dir = nil
-local prompt_path = nil
-if workbench ~= nil then
-  loop_dir = workbench.dir .. "/loop"
-  prompt_path = loop_dir .. "/next_prompt.md"
-end
-
--- ---- START (pre) stage ----
-if stage == "pre" then
-
-  -- Workbench absent: skip and remove self from end pipeline
-  if workbench == nil then
-    -- Pin a note about skipping
-    aip.task.pin("Loop sub-agent skipped because workbench is not enabled.")
-    -- Remove this agent from subsequent end-stage pipeline
-    local next_agents = input.sub_agents_next or {}
-    local new_next = {}
-    for _, item in ipairs(next_agents) do
-      if item.name ~= agent_config.name then
-        table.insert(new_next, item)
-      end
-    end
-    return {
-      sub_agents_next = new_next,
-      success = true,
-    }
-  end
-
-  -- Workbench present: set up loop directory and inject <NEXT_PROMPT> guidance
-  aip.file.ensure_dir(loop_dir)
-  aip.file.ensure_exists(prompt_path, "")
-
-  -- Ensure this agent is registered for the end event as well
-  local next_agents = input.sub_agents_next or {}
-  local new_next = {}
-  local found_in_end = false
-  for _, item in ipairs(next_agents) do
-    table.insert(new_next, item)
-    if item.name == agent_config.name then
-      found_in_end = true
-    end
-  end
-  if not found_in_end then
-    table.insert(new_next, {
-      name = agent_config.name,
-      enabled = true,
-      on = "end",
-    })
-  end
-
-  -- Append loop usage instruction to the coder prompt
-  local loop_instruction = "When you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
-  local new_prompt = value_or(input.coder_prompt, "") .. loop_instruction
-
-  -- Load next prompt file and possibly replace current instruction
-  local next_content = aip.file.load(prompt_path)
-  if next_content then
-    local trimmed = aip.text.trim(next_content.content)
-    if trimmed ~= nil and trimmed ~= "" and trimmed ~= "THE_END" then
-      new_prompt = trimmed .. loop_instruction          -- replace coder prompt with the saved content, still include loop instruction
-      aip.file.save(prompt_path, "") -- clear the file so it is not reused on redo
-    end
-  end
-
-  return {
-    coder_prompt = new_prompt,
-    sub_agents_next = new_next,
-    success = true,
-  }
-
--- ---- END (post) stage ----
-elseif stage == "post" then
-  -- Only relevant when workbench is present (already guarded by the pre/start handler,
-  -- but we check again defensively)
-  if workbench == nil then
-    return { success = true, coder_redo = false }
-  end
-
-  aip.file.ensure_dir(loop_dir)
-  aip.file.ensure_exists(prompt_path, "")
-
-  -- Scan extruded AI responses for <NEXT_PROMPT> tags
-  local next_tags = {}
-  local responses = input.coder_responses or {}
-  for _, resp in ipairs(responses) do
-    local extruded = resp.content_extruded or ""
-    local tags = aip.tag.extract(extruded, "NEXT_PROMPT")
-    for _, tag in ipairs(tags) do
-      table.insert(next_tags, tag.content or "")
-    end
-  end
-
-  if #next_tags > 0 then
-    -- Use the content of the first non‑empty tag
-    local new_content = ""
-    for _, c in ipairs(next_tags) do
-      local trimmed = aip.text.trim(c)
-      if trimmed ~= nil and trimmed ~= "" then
-        new_content = trimmed
-        break
-      end
-    end
-    if new_content ~= "" then
-      aip.file.save(prompt_path, new_content)
-      return {
-        coder_redo = true,
-        success = true,
-      }
-    end
-  end
-  -- No next prompt requested, or all tags were empty -> write THE_END marker
-  local iter_count = value_or(CTX.RUN_FLOW_REDO_COUNT, 0)
-  local end_content = "THE_END\n\n```yaml\niter_count: " .. tostring(iter_count) .. "\n```\n"
-  aip.file.save(prompt_path, end_content)
-  return {
-    coder_redo = false,
-    success = true,
-  }
-else
-  -- Unknown stage, do nothing
-  return { success = true }
-end
 ```
