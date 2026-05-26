@@ -47,28 +47,12 @@ if stage == "pre" then
     aip.file.save(instructions_path, value_or(input.coder_prompt, ""))
   end
 
-  local coder_params = value_or(input.coder_params, {})
- local existing = value_or(coder_params.context_globs_post, nil)
- local context_globs_post = {}
- if type(existing) == "table" then
-   for _, item in ipairs(existing) do
-     table.insert(context_globs_post, item)
-   end
- elseif existing ~= nil then
-   table.insert(context_globs_post, existing)
- end
-  local has_instructions_path = false
-  for _, item in ipairs(context_globs_post) do
-    if item == instructions_path then
-      has_instructions_path = true
-      break
-    end
-  end
-  if not has_instructions_path then
-    table.insert(context_globs_post, instructions_path)
-  end
+ local coder_params = value_or(input.coder_params, {})
+ local new_context_globs_post = value_or(coder_params.context_globs_post, {})
+ table.insert(new_context_globs_post, instructions_path)
 
-  local loop_instruction = "\n\n---\nLoop instruction:\nUse the context file `" .. instructions_path .. "` as the guiding loop instructions for this top-level loop run. The file is refreshed from the user's original instruction at the start of each top-level run and may be updated dynamically between loop runs.\nWhen you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
+  local loop_instruction = "\n\n---\nLoop instruction:\nUse the context file `loop-instructions.md` as the guiding loop instructions for this top-level loop run. The file is refreshed from the user's original instruction at the start of each top-level run and may be updated dynamically between loop runs.\nWhen you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
+  
   local new_prompt = value_or(input.coder_prompt, "") .. loop_instruction
 
   -- Load next prompt file and possibly replace current instruction
@@ -86,7 +70,7 @@ if stage == "pre" then
   return {
     agent_on = { "start", "end" },
     coder_params = {
-      context_globs_post = context_globs_post,
+      context_globs_post = new_context_globs_post,
     },
     coder_prompt = new_prompt,
     success = true,
