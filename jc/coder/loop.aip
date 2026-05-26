@@ -16,9 +16,11 @@ local workbench = input.coder_workbench
 -- Compute common values once
 local loop_dir = nil
 local prompt_path = nil
+local instructions_path = nil
 if workbench ~= nil then
   loop_dir = workbench.dir .. "/loop"
   prompt_path = loop_dir .. "/next-prompt.md"
+  instructions_path = loop_dir .. "/loop-instructions.md"
 end
 
 -- ---- START (pre) stage ----
@@ -40,7 +42,33 @@ if stage == "pre" then
   local coder_redo_count = value_or(input.coder_redo_count, 0)
   aip.run.pin("redo count", "coder_redo_count: " .. tostring(coder_redo_count))
 
-  local loop_instruction = "\n\n---\nLoop instruction:\nWhen you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
+  aip.file.ensure_exists(instructions_path, "")
+  if coder_redo_count == 0 then
+    aip.file.save(instructions_path, value_or(input.coder_prompt, ""))
+  end
+
+  local coder_params = value_or(input.coder_params, {})
+  local context_globs_post = {}
+  local existing_context_globs_post = coder_params.context_globs_post
+  if type(existing_context_globs_post) == "table" then
+    for _, item in ipairs(existing_context_globs_post) do
+      table.insert(context_globs_post, item)
+    end
+  elseif existing_context_globs_post ~= nil then
+    table.insert(context_globs_post, existing_context_globs_post)
+  end
+  local has_instructions_path = false
+  for _, item in ipairs(context_globs_post) do
+    if item == instructions_path then
+      has_instructions_path = true
+      break
+    end
+  end
+  if not has_instructions_path then
+    table.insert(context_globs_post, instructions_path)
+  end
+
+  local loop_instruction = "\n\n---\nLoop instruction:\nUse the context file `" .. instructions_path .. "` as the guiding loop instructions for this top-level loop run. The file is refreshed from the user's original instruction at the start of each top-level run and may be updated dynamically between loop runs.\nWhen you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
   local new_prompt = value_or(input.coder_prompt, "") .. loop_instruction
 
   -- Load next prompt file and possibly replace current instruction
@@ -57,6 +85,9 @@ if stage == "pre" then
 
   return {
     agent_on = { "start", "end" },
+    coder_params = {
+      context_globs_post = context_globs_post,
+    },
     coder_prompt = new_prompt,
     success = true,
   }
