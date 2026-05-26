@@ -1,9 +1,3 @@
-# Options
-
-```toml
-# No special options needed for this sub-agent
-```
-
 # Output
 
 ```lua
@@ -51,7 +45,21 @@ if stage == "pre" then
  local new_context_globs_post = value_or(coder_params.context_globs_post, {})
  table.insert(new_context_globs_post, instructions_path)
 
-  local loop_instruction = "\n\n---\nLoop instruction:\nUse the context file `loop-instructions.md` as the guiding loop instructions for this top-level loop run. The file is refreshed from the user's original instruction at the start of each top-level run and may be updated dynamically between loop runs.\nWhen you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
+ local loop_instruction = [[
+
+
+---
+Loop instruction:
+
+Use the context file `loop-instructions.md` as the guiding loop instructions for this top-level loop run. The file is refreshed from the user's original instruction at the start of each top-level run and may be updated dynamically between loop runs.
+
+When you want to request a follow‑up run with a new prompt to continue the, include a <NEXT_PROMPT> tag containing the new prompt content. For example
+
+<NEXT_PROMPT> 
+_the_next_prompt_to_be_executed_
+</NEXT_PROMPT> 
+
+]]
   
   local new_prompt = value_or(input.coder_prompt, "") .. loop_instruction
 
@@ -114,7 +122,7 @@ elseif stage == "post" then
 
   if #next_tags > 0 then
     aip.file.save(prompt_path, new_content)
-    aip.run.pin("loop-end", "Next prompt:\n" .. new_content)
+    aip.run.pin("loop-end", {label = "Next prompt:", content = new_content})
     return {
       coder_redo = true,
       success = true,
