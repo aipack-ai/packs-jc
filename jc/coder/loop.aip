@@ -117,24 +117,22 @@ elseif stage == "post" then
         break
       end
     end
-    if new_content == "" then
-      new_content = "THE_END\n\n```yaml\niter_count: " .. tostring(CTX.RUN_FLOW_REDO_COUNT or 0) .. "\n```\n"
+    if new_content ~= "" then
+      aip.file.save(prompt_path, new_content)
+      return {
+        coder_redo = true,
+        success = true,
+      }
     end
-    aip.file.save(prompt_path, new_content)
-    return {
-      coder_redo = true,
-      success = true,
-    }
-  else
-    -- No next prompt requested -> write THE_END marker
-    local iter_count = value_or(CTX.RUN_FLOW_REDO_COUNT, 0)
-    local end_content = "THE_END\n\n```yaml\niter_count: " .. tostring(iter_count) .. "\n```\n"
-    aip.file.save(prompt_path, end_content)
-    return {
-      coder_redo = false,
-      success = true,
-    }
   end
+  -- No next prompt requested, or all tags were empty -> write THE_END marker
+  local iter_count = value_or(CTX.RUN_FLOW_REDO_COUNT, 0)
+  local end_content = "THE_END\n\n```yaml\niter_count: " .. tostring(iter_count) .. "\n```\n"
+  aip.file.save(prompt_path, end_content)
+  return {
+    coder_redo = false,
+    success = true,
+  }
 else
   -- Unknown stage, do nothing
   return { success = true }
