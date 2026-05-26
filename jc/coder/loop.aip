@@ -37,8 +37,8 @@ if stage == "pre" then
   -- Workbench present: set up loop directory and inject <NEXT_PROMPT> guidance
   aip.file.ensure_dir(loop_dir)
   aip.file.ensure_exists(prompt_path, "")
-  local iter_count = value_or(CTX.RUN_FLOW_REDO_COUNT, 0)
-  aip.run.pin("loop-flow-redo-count", "FLOW redo count: " .. tostring(iter_count))
+  local coder_redo_count = value_or(input.coder_redo_count, 0)
+  aip.run.pin("redo count", "coder_redo_count: " .. tostring(coder_redo_count))
 
   local loop_instruction = "\n\n---\nLoop instruction:\nWhen you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
   local new_prompt = value_or(input.coder_prompt, "") .. loop_instruction
@@ -107,10 +107,10 @@ elseif stage == "post" then
   end
 
   -- No next prompt requested: write THE_END marker and pin
-  local iter_count = value_or(CTX.RUN_FLOW_REDO_COUNT, 0)
-  local end_content = "THE_END\n\n```yaml\niter_count: " .. tostring(iter_count) .. "\n```\n"
+  local coder_redo_count = value_or(input.coder_redo_count, 0)
+  local end_content = "THE_END\n\n```yaml\ncoder_redo_count: " .. tostring(coder_redo_count) .. "\n```\n"
   aip.file.save(prompt_path, end_content)
-  aip.run.pin("loop-end", "No next prompt requested. Loop ended (iter_count=" .. tostring(iter_count) .. ").")
+  aip.run.pin("loop-end", "No next prompt requested. Loop ended (coder_redo_count=" .. tostring(coder_redo_count) .. ").")
   return {
     coder_redo = false,
     success = true,
