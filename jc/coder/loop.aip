@@ -48,15 +48,15 @@ if stage == "pre" then
   end
 
   local coder_params = value_or(input.coder_params, {})
-  local context_globs_post = {}
-  local existing_context_globs_post = coder_params.context_globs_post
-  if type(existing_context_globs_post) == "table" then
-    for _, item in ipairs(existing_context_globs_post) do
-      table.insert(context_globs_post, item)
-    end
-  elseif existing_context_globs_post ~= nil then
-    table.insert(context_globs_post, existing_context_globs_post)
-  end
+ local existing = value_or(coder_params.context_globs_post, nil)
+ local context_globs_post = {}
+ if type(existing) == "table" then
+   for _, item in ipairs(existing) do
+     table.insert(context_globs_post, item)
+   end
+ elseif existing ~= nil then
+   table.insert(context_globs_post, existing)
+ end
   local has_instructions_path = false
   for _, item in ipairs(context_globs_post) do
     if item == instructions_path then
@@ -105,9 +105,9 @@ elseif stage == "post" then
 
   -- Scan extruded AI responses for <NEXT_PROMPT> tags
   local next_tags = {}
-  local responses = input.coder_responses or {}
+ local responses = value_or(input.coder_responses, {})
   for _, resp in ipairs(responses) do
-    local extruded = resp.content_extruded or ""
+   local extruded = value_or(resp.content_extruded, "")
     local tags = aip.tag.extract(extruded, "NEXT_PROMPT")
     for _, tag in ipairs(tags) do
       table.insert(next_tags, tag.content or "")
