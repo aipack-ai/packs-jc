@@ -14,69 +14,7 @@ local stage = input.stage            -- "pre" or "post"
 local workbench = input.coder_workbench
 local agent_config = input.agent_config
 
-local function has_end_event(config)
-  if config == nil then
-    return false
-  end
-
-  local events = config.on
-  if events == "end" then
-    return true
-  end
-
-  if type(events) == "table" then
-    for _, event in ipairs(events) do
-      if event == "end" then
-        return true
-      end
-    end
-  end
-
-  return false
-end
-
-local function events_with_end(events)
-  if events == nil then
-    return { "start", "end" }
-  end
-
-  if events == "end" then
-    return events
-  end
-
-  if type(events) == "table" then
-    local updated = {}
-    local has_end = false
-    for _, event in ipairs(events) do
-      table.insert(updated, event)
-      if event == "end" then
-        has_end = true
-      end
-    end
-    if not has_end then
-      table.insert(updated, "end")
-    end
-    return updated
-  end
-
-  return { events, "end" }
-end
-
-local function same_agent(config)
-  return config ~= nil
-    and agent_config ~= nil
-    and config.name == agent_config.name
-end
-
-local function copy_table(value)
-  local result = {}
-  for key, item in pairs(value or {}) do
-    result[key] = item
-  end
-  return result
-end
-
-local function sub_agents_with_end_registration()
+local function updated_sub_agents(events)
   if agent_config == nil or agent_config.name == nil then
     return nil
   end
@@ -87,33 +25,31 @@ local function sub_agents_with_end_registration()
   end
 
   local updated = {}
-  local changed = false
   local found_self = false
   for _, config in ipairs(source) do
-    if type(config) == "table" and same_agent(config) then
+    if type(config) == "table" and config.name == agent_config.name then
       found_self = true
-      if has_end_event(config) then
-        table.insert(updated, config)
-      else
-        local next_config = copy_table(config)
-        next_config.on = events_with_end(next_config.on)
-        table.insert(updated, next_config)
-        changed = true
+      local next_config = {}
+      for key, item in pairs(config) do
+        next_config[key] = item
       end
+      next_config.on = events
+      next_config.enabled = value_or(next_config.enabled, true)
+      table.insert(updated, next_config)
     else
       table.insert(updated, config)
     end
   end
 
   if found_self then
-    if changed then
-      return updated
-    end
-    return nil
+    return updated
   end
 
-  local end_config = copy_table(agent_config)
-  end_config.on = events_with_end(end_config.on)
+  local end_config = {}
+  for key, item in pairs(agent_config) do
+    end_config[key] = item
+  end
+  end_config.on = events
   end_config.enabled = value_or(end_config.enabled, true)
   table.insert(updated, end_config)
 
@@ -135,6 +71,16 @@ if stage == "pre" then
   -- Workbench absent: skip with a note
   if workbench == nil then
     aip.run.pin("loop-start", "Loop sub-agent skipped because workbench is not enabled.")
+    local loop_sub_agents = updated_sub_agents({ "start" })
+    if loop_sub_agents ~= nil then
+      return {
+        coder_params = {
+          sub_agents = loop_sub_agents,
+        },
+        success = true,
+      }
+    end
+
     return { success = true }
   end
 
@@ -149,7 +95,7 @@ if stage == "pre" then
   local next_content = aip.file.load(prompt_path)
   if next_content then
     local trimmed = aip.text.trim(next_content.content)
-    if trimmed ~= nil and trimmed ~= "" and trimmed ~= "THE_END" then
+    if trimmed ~= nil and trimmed ~= "" and string.sub(trimmed, 1, 7) ~= "THE_END" then
       new_prompt = trimmed .. loop_instruction
       aip.file.save(prompt_path, "") -- clear the file so it is not reused on redo
     end
@@ -157,12 +103,12 @@ if stage == "pre" then
 
   aip.run.pin("loop-start", "Loop instruction appended to coder prompt.")
 
-  local updated_sub_agents = sub_agents_with_end_registration()
-  if updated_sub_agents ~= nil then
-    aip.run.pin("loop-start-end", "Loop sub-agent registered for the end event.")
+  local loop_sub_agents = updated_sub_agents({ "start", "end" })
+  if loop_sub_agents ~= nil then
+    aip.run.pin("loop-start-end", "Loop sub-agent registered for start and end events.")
     return {
       coder_params = {
-        sub_agents = updated_sub_agents,
+        sub_agents = loop_sub_agents,
       },
       coder_prompt = new_prompt,
       success = true,
@@ -206,7 +152,11 @@ elseif stage == "post" then
     end
   end
 
-  if new_content ~= "" then
+  if new_content == "" and #next_tags > 0 then
+    new_content = next_tags[1]
+  end
+
+  if #next_tags > 0 then
     aip.file.save(prompt_path, new_content)
     aip.run.pin("loop-end", "Next prompt:\n" .. new_content)
     return {
