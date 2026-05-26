@@ -12,49 +12,6 @@
 
 local stage = input.stage            -- "pre" or "post"
 local workbench = input.coder_workbench
-local agent_config = input.agent_config
-
-local function updated_sub_agents(events)
-  if agent_config == nil or agent_config.name == nil then
-    return nil
-  end
-
-  local source = {}
-  if input.coder_params ~= nil and type(input.coder_params.sub_agents) == "table" then
-    source = input.coder_params.sub_agents
-  end
-
-  local updated = {}
-  local found_self = false
-  for _, config in ipairs(source) do
-    if type(config) == "table" and config.name == agent_config.name then
-      found_self = true
-      local next_config = {}
-      for key, item in pairs(config) do
-        next_config[key] = item
-      end
-      next_config.on = events
-      next_config.enabled = value_or(next_config.enabled, true)
-      table.insert(updated, next_config)
-    else
-      table.insert(updated, config)
-    end
-  end
-
-  if found_self then
-    return updated
-  end
-
-  local end_config = {}
-  for key, item in pairs(agent_config) do
-    end_config[key] = item
-  end
-  end_config.on = events
-  end_config.enabled = value_or(end_config.enabled, true)
-  table.insert(updated, end_config)
-
-  return updated
-end
 
 -- Compute common values once
 local loop_dir = nil
@@ -71,17 +28,10 @@ if stage == "pre" then
   -- Workbench absent: skip with a note
   if workbench == nil then
     aip.run.pin("loop-start", "Loop sub-agent skipped because workbench is not enabled.")
-    local loop_sub_agents = updated_sub_agents({ "start" })
-    if loop_sub_agents ~= nil then
-      return {
-        coder_params = {
-          sub_agents = loop_sub_agents,
-        },
-        success = true,
-      }
-    end
-
-    return { success = true }
+    return {
+      agent_on = "start",
+      success = true,
+    }
   end
 
   -- Workbench present: set up loop directory and inject <NEXT_PROMPT> guidance
@@ -103,19 +53,8 @@ if stage == "pre" then
 
   aip.run.pin("loop-start", "Loop instruction appended to coder prompt.")
 
-  local loop_sub_agents = updated_sub_agents({ "start", "end" })
-  if loop_sub_agents ~= nil then
-    aip.run.pin("loop-start-end", "Loop sub-agent registered for start and end events.")
-    return {
-      coder_params = {
-        sub_agents = loop_sub_agents,
-      },
-      coder_prompt = new_prompt,
-      success = true,
-    }
-  end
-
   return {
+    agent_on = { "start", "end" },
     coder_prompt = new_prompt,
     success = true,
   }
