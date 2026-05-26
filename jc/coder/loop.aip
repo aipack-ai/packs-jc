@@ -18,7 +18,7 @@ local loop_dir = nil
 local prompt_path = nil
 if workbench ~= nil then
   loop_dir = workbench.dir .. "/loop"
-  prompt_path = loop_dir .. "/next_prompt.md"
+  prompt_path = loop_dir .. "/next-prompt.md"
 end
 
 -- ---- START (pre) stage ----
@@ -37,6 +37,8 @@ if stage == "pre" then
   -- Workbench present: set up loop directory and inject <NEXT_PROMPT> guidance
   aip.file.ensure_dir(loop_dir)
   aip.file.ensure_exists(prompt_path, "")
+  local iter_count = value_or(CTX.RUN_FLOW_REDO_COUNT, 0)
+  aip.run.pin("loop-flow-redo-count", "FLOW redo count: " .. tostring(iter_count))
 
   local loop_instruction = "\n\n---\nLoop instruction:\nWhen you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
   local new_prompt = value_or(input.coder_prompt, "") .. loop_instruction
