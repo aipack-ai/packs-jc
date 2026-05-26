@@ -24,6 +24,111 @@ end
 
 -- ---- START (pre) stage ----
 if stage == "pre" then
+  aip.run.set_label("jc-loop-start")
+
+  -- Workbench absent: skip with a note
+  if workbench == nil then
+    aip.run.pin("loop-start", "Loop sub-agent skipped because workbench is not enabled.")
+    return { success = true }
+  end
+
+  -- Workbench present: set up loop directory and inject <NEXT_PROMPT> guidance
+  aip.file.ensure_dir(loop_dir)
+  aip.file.ensure_exists(prompt_path, "")
+
+  local loop_instruction = "When you want to request a follow‑up run with a new prompt, include a <NEXT_PROMPT> tag containing the new prompt content.\n\n"
+  local new_prompt = value_or(input.coder_prompt, "") .. loop_instruction
+
+  -- Load next prompt file and possibly replace current instruction
+  local next_content = aip.file.load(prompt_path)
+  if next_content then
+    local trimmed = aip.text.trim(next_content.content)
+    if trimmed ~= nil and trimmed ~= "" and trimmed ~= "THE_END" then
+      new_prompt = trimmed .. loop_instruction
+      aip.file.save(prompt_path, "") -- clear the file so it is not reused on redo
+    end
+  end
+
+  aip.run.pin("loop-start", "Loop instruction appended to coder prompt.")
+
+  return {
+    coder_prompt = new_prompt,
+    success = true,
+  }
+
+-- ---- END (post) stage ----
+elseif stage == "post" then
+  aip.run.set_label("jc-loop-end")
+
+  if workbench == nil then
+    return { success = true, coder_redo = false }
+  end
+
+  aip.file.ensure_dir(loop_dir)
+  aip.file.ensure_exists(prompt_path, "")
+
+  -- Scan extruded AI responses for <NEXT_PROMPT> tags
+  local next_tags = {}
+  local responses = input.coder_responses or {}
+  for _, resp in ipairs(responses) do
+    local extruded = resp.content_extruded or ""
+    local tags = aip.tag.extract(extruded, "NEXT_PROMPT")
+    for _, tag in ipairs(tags) do
+      table.insert(next_tags, tag.content or "")
+    end
+  end
+
+  -- Find the first non‑empty tag content
+  local new_content = ""
+  for _, c in ipairs(next_tags) do
+    local trimmed = aip.text.trim(c)
+    if trimmed ~= nil and trimmed ~= "" then
+      new_content = trimmed
+      break
+    end
+  end
+
+  if new_content ~= "" then
+    aip.file.save(prompt_path, new_content)
+    aip.run.pin("loop-end", "Next prompt:\n" .. new_content)
+    return {
+      coder_redo = true,
+      success = true,
+    }
+  end
+
+  -- No next prompt requested: write THE_END marker and pin
+  local iter_count = value_or(CTX.RUN_FLOW_REDO_COUNT, 0)
+  local end_content = "THE_END\n\n```yaml\niter_count: " .. tostring(iter_count) .. "\n```\n"
+  aip.file.save(prompt_path, end_content)
+  aip.run.pin("loop-end", "No next prompt requested. Loop ended (iter_count=" .. tostring(iter_count) .. ").")
+  return {
+    coder_redo = false,
+    success = true,
+  }
+else
+  -- Unknown stage, do nothing
+  return { success = true }
+end
+
+```
+-- Loop-aware sub-agent for pro@coder
+-- Handles start (pre) and end (post) events to manage a prompt loop via <NEXT_PROMPT> tags
+
+local stage = input.stage            -- "pre" or "post"
+local workbench = input.coder_workbench
+local agent_config = input.agent_config
+
+-- Compute common values once
+local loop_dir = nil
+local prompt_path = nil
+if workbench ~= nil then
+  loop_dir = workbench.dir .. "/loop"
+  prompt_path = loop_dir .. "/next_prompt.md"
+end
+
+-- ---- START (pre) stage ----
+if stage == "pre" then
 
   -- Workbench absent: skip and remove self from end pipeline
   if workbench == nil then
