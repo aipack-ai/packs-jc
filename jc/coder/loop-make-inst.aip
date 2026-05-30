@@ -1,0 +1,50 @@
+# Options
+
+```toml
+model = "flash"
+```
+
+# Data
+
+```lua
+local workbench_dir = input.workbench_dir
+
+-- Load original prompt
+local original_path = workbench_dir .. "/original-user-prompt.md"
+local original_load = aip.file.load(original_path)
+local original_content = original_load and original_load.content or ""
+
+-- Load loop rules template
+local rules_path = "jc/coder/templates/loop-rules.md"
+local rules_load = aip.file.load(rules_path)
+local rules_content = rules_load and rules_load.content or ""
+
+return {
+  original_prompt = original_content,
+  loop_rules = rules_content
+}
+```
+
+# Instruction
+
+```handlebars
+Given the following original user prompt and the loop rules template, generate the `loop-instructions.md` file content. The content should retain all details of the original prompt and structure it into a format suitable for multiple iterative runs, following the guidelines in the loop rules.
+
+**Original User Prompt:**
+
+{{data.original_prompt}}
+
+**Loop Rules Template:**
+
+{{data.loop_rules}}
+
+Now, produce the loop-instructions.md content. Output ONLY the content, with no surrounding code fences, no preamble, no commentary. Just the instructions as they should appear in the file.
+```
+
+# Output
+
+```lua
+local instructions_path = input.workbench_dir .. "/loop-instructions.md"
+aip.file.save(instructions_path, ai_response.content)
+return nil
+```
