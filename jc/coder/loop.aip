@@ -30,50 +30,66 @@ if stage == "pre" then
     }
   end
 
-  -- Workbench present: set up loop directory and inject <NEXT_PROMPT> guidance
+  -- Workbench present: set up loop directory
   aip.file.ensure_dir(loop_dir)
-  aip.file.ensure_exists(prompt_path, "")
-  local coder_redo_count = value_or(input.coder_redo_count, 0)
-  aip.run.pin("redo count", "coder_redo_count: " .. tostring(coder_redo_count))
 
-  aip.file.ensure_exists(instructions_path, "")
-  if coder_redo_count == 0 then
-    aip.file.save(instructions_path, value_or(input.coder_prompt, ""))
+  -- Save original user prompt on first run
+  local original_prompt_path = loop_dir .. "/original-user-prompt.md"
+  if not aip.file.exists(original_prompt_path) then
+    aip.file.save(original_prompt_path, value_or(input.coder_prompt, ""))
   end
 
- local coder_params = value_or(input.coder_params, {})
- local new_context_globs_post = value_or(coder_params.context_globs_post, {})
- table.insert(new_context_globs_post, instructions_path)
-
- local loop_instruction = [[
-
-
----
-Loop instruction:
-
-Use the context file `loop-instructions.md` as the guiding loop instructions for this top-level loop run. The file is refreshed from the user's original instruction at the start of each top-level run and may be updated dynamically between loop runs.
-
-When you want to request a follow‑up run with a new prompt to continue the, include a <NEXT_PROMPT> tag containing the new prompt content. For example
-
-<NEXT_PROMPT> 
-_the_next_prompt_to_be_executed_
-</NEXT_PROMPT> 
-
-]]
-  
-  local new_prompt = value_or(input.coder_prompt, "") .. loop_instruction
-
-  -- Load next prompt file and possibly replace current instruction
-  local next_content = aip.file.load(prompt_path)
-  if next_content then
-    local trimmed = aip.text.trim(next_content.content)
-    if trimmed ~= nil and trimmed ~= "" and string.sub(trimmed, 1, 7) ~= "THE_END" then
-      new_prompt = trimmed .. loop_instruction
-      aip.file.save(prompt_path, "") -- clear the file so it is not reused on redo
+  -- Generate loop instructions if missing
+  if not aip.file.exists(instructions_path) then
+    local agent_result = aip.agent.run("loop-make-inst", {
+      inputs = {{workbench_dir = loop_dir}}
+    })
+    if not agent_result or not agent_result.success then
+      aip.run.pin("loop-make-inst-error", "Failed to generate loop-instructions.md")
     end
   end
 
-  aip.run.pin("loop-start", "Loop instruction appended to coder prompt.")
+  -- Load loop instructions and rules template
+  local instructions_content = ""
+  local loaded_inst = aip.file.load(instructions_path)
+  if loaded_inst then
+    instructions_content = loaded_inst.content or ""
+  end
+
+  local template_content = ""
+  local template_path = "jc/coder/templates/loop-rules.md"
+  local loaded_tpl = aip.file.load(template_path)
+  if loaded_tpl then
+    template_content = loaded_tpl.content or ""
+  end
+
+  local loop_appendix = instructions_content .. "\n\n" .. template_content
+
+  local coder_redo_count = value_or(input.coder_redo_count, 0)
+  aip.run.pin("redo count", "coder_redo_count: " .. tostring(coder_redo_count))
+
+  -- Build new coder prompt
+  local new_prompt = nil
+  aip.file.ensure_exists(prompt_path, "")
+  local next_prompt_raw = aip.file.load(prompt_path)
+  local next_prompt_content = nil
+  if next_prompt_raw then
+    next_prompt_content = aip.text.trim(next_prompt_raw.content)
+  end
+
+  if next_prompt_content and next_prompt_content ~= "" and next_prompt_content:sub(1, 7) ~= "THE_END" then
+    new_prompt = next_prompt_content .. loop_appendix
+    aip.file.save(prompt_path, "") -- clear to avoid reusing on redo
+  else
+    new_prompt = value_or(input.coder_prompt, "") .. loop_appendix
+  end
+
+  -- Update context_globs_post to include instructions file
+  local coder_params = value_or(input.coder_params, {})
+  local new_context_globs_post = value_or(coder_params.context_globs_post, {})
+  table.insert(new_context_globs_post, instructions_path)
+
+  aip.run.pin("loop-start", "Loop appendix built from loop-instructions.md and loop-rules.md. Prompt updated.")
 
   return {
     agent_on = { "start", "end" },
