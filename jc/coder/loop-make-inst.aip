@@ -15,7 +15,7 @@ local original_load = aip.file.load(original_path)
 local original_content = original_load and original_load.content or ""
 
 -- Load loop rules template
-local rules_path = "jc/coder/templates/loop-rules.md"
+  local rules_path = aip.path.join(CTX.AGENT_FILE_DIR, "templates/loop-rules.md")
 local rules_load = aip.file.load(rules_path)
 local rules_content = rules_load and rules_load.content or ""
 
