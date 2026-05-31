@@ -12,7 +12,8 @@ local loop_dir = nil
 local prompt_path = nil
 local instructions_path = nil
 if workbench ~= nil then
-  loop_dir = workbench.dir .. "/loop"
+  local loop_util = dofile(aip.path.join(CTX.AGENT_FILE_DIR, "lua/loop.lua"))
+  loop_dir = loop_util.get_loop_dir(workbench)
   prompt_path = loop_dir .. "/next-prompt.md"
   instructions_path = loop_dir .. "/loop-instructions.md"
 end
