@@ -50,21 +50,6 @@ if stage == "pre" then
   end
 
   -- Load loop instructions and rules template
-  local instructions_content = ""
-  local loaded_inst = aip.file.load(instructions_path)
-  if loaded_inst then
-    instructions_content = loaded_inst.content or ""
-  end
-
-  local template_content = ""
-  local template_path = aip.path.join(CTX.AGENT_FILE_DIR, "templates/loop-rules.md")
-  local loaded_tpl = aip.file.load(template_path)
-  if loaded_tpl then
-    template_content = loaded_tpl.content or ""
-  end
-
-  local loop_appendix = instructions_content .. "\n\n" .. template_content
-
   local coder_redo_count = value_or(input.coder_redo_count, 0)
 
   -- Build new coder prompt
@@ -77,10 +62,10 @@ if stage == "pre" then
   end
 
   if next_prompt_content and next_prompt_content ~= "" and next_prompt_content:sub(1, 7) ~= "THE_END" then
-    new_prompt = next_prompt_content .. loop_appendix
+    new_prompt = next_prompt_content
     aip.file.save(prompt_path, "") -- clear to avoid reusing on redo
   else
-    new_prompt = value_or(input.coder_prompt, "") .. loop_appendix
+    new_prompt = value_or(input.coder_prompt, "")
   end
 
   -- Update context_globs_post to include instructions file
@@ -89,10 +74,11 @@ if stage == "pre" then
   table.insert(new_context_globs_post, instructions_path)
 
   -- Build and display loop-start summary
-  local display_msg = "Add to context_globs_post: " .. instructions_path .. "\n\nNew prompt:\n\n" .. new_prompt .. "\n"
-  aip.run.pin("New Prompt:", {label = "New Prompt:", content = new_prompt})
+  aip.run.pin("next_prompt", {label = "Next Prompt:", content = new_prompt})
+  print("new_context_globs_post", new_context_globs_post)
 
   return {
+  	_display = "loop-start processed",
     agent_on = { "start", "end" },
     coder_params = {
       context_globs_post = new_context_globs_post,
