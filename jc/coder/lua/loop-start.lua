@@ -1,4 +1,4 @@
-local loop = require("jc.coder.lua.loop")
+local loop = require("loop")
 
 local function loop_start(params)
 	aip.run.set_label("loop-start")

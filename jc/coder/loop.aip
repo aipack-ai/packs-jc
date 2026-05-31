@@ -10,13 +10,15 @@ local workbench = input.coder_workbench
 -- Compute common paths once
 local loop_paths = nil
 if workbench ~= nil then
-  local loop_util = require("jc.coder.lua.loop")
+  local loop_util = require("loop")
   loop_paths = loop_util.get_loop_paths(workbench)
 end
 
+-- ---- START (pre) stage ----
 if stage == "pre" then
-  local loop_start = require("jc.coder.lua.loop-start").loop_start
+  local loop_start = require("loop-start").loop_start
   return loop_start({ workbench = workbench, inputs = input, loop_paths = loop_paths })
+  
 -- ---- END (post) stage ----
 elseif stage == "post" then
   aip.run.set_label("loop-end")
