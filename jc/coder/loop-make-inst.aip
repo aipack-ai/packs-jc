@@ -45,6 +45,8 @@ Now, produce the loop-instructions.md content. Output ONLY the content, with no 
 
 ```lua
 local instructions_path = input.workbench_dir .. "/loop-instructions.md"
+
 aip.file.save(instructions_path, ai_response.content)
-return nil
+
+return { success = true }
 ```
