@@ -66,7 +66,6 @@ if stage == "pre" then
   local loop_appendix = instructions_content .. "\n\n" .. template_content
 
   local coder_redo_count = value_or(input.coder_redo_count, 0)
-  aip.run.pin("redo count", "coder_redo_count: " .. tostring(coder_redo_count))
 
   -- Build new coder prompt
   local new_prompt = nil
@@ -89,7 +88,9 @@ if stage == "pre" then
   local new_context_globs_post = value_or(coder_params.context_globs_post, {})
   table.insert(new_context_globs_post, instructions_path)
 
-  aip.run.pin("loop-start", "Loop appendix built from loop-instructions.md and loop-rules.md. Prompt updated.")
+  -- Build and display loop-start summary
+  local display_msg = "Add to context_globs_post: " .. instructions_path .. "\n\nNew prompt:\n\n" .. new_prompt .. "\n"
+  aip.run.pin("New Prompt:", {label = "New Prompt:", content = new_prompt})
 
   return {
     agent_on = { "start", "end" },

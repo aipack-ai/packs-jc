@@ -1,3 +1,5 @@
+--- 
+
 Loop rules:
 
 Use the context file `loop-instructions.md` as the guiding loop instructions for this top-level loop run. The file is refreshed from the user's original instruction at the start of each top-level run and may be updated dynamically between loop runs.
