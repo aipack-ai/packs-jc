@@ -19,7 +19,7 @@ end
 
 -- ---- START (pre) stage ----
 if stage == "pre" then
-  aip.run.set_label("jc-loop-start")
+  aip.run.set_label("loop-start")
 
   -- Workbench absent: skip with a note
   if workbench == nil then
@@ -102,7 +102,7 @@ if stage == "pre" then
 
 -- ---- END (post) stage ----
 elseif stage == "post" then
-  aip.run.set_label("jc-loop-end")
+  aip.run.set_label("loop-end")
 
   if workbench == nil then
     return { success = true, coder_redo = false }
