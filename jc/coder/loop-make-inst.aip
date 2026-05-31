@@ -7,10 +7,10 @@ model = "flash"
 # Data
 
 ```lua
-local workbench_dir = input.workbench_dir
+local loop_dir = input.loop_dir
 
 -- Load original prompt
-local original_path = workbench_dir .. "/original-user-prompt.md"
+local original_path = loop_dir .. "/original-user-prompt.md"
 local original_load = aip.file.load(original_path)
 local original_content = original_load and original_load.content or ""
 
@@ -44,7 +44,7 @@ Now, produce the loop-instructions.md content. Output ONLY the content, with no 
 # Output
 
 ```lua
-local instructions_path = input.workbench_dir .. "/loop-instructions.md"
+local instructions_path = input.loop_dir .. "/loop-instructions.md"
 
 aip.file.save(instructions_path, ai_response.content)
 
