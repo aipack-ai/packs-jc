@@ -58,7 +58,6 @@ local function loop_start(params)
 
 	-- Update context_globs_post to include loop-rules and instructions files
 	local coder_params = value_or(input.coder_params, {})
-	local new_coder_params = aip.lua.merge({}, coder_params)
 	local new_context_globs_post = value_or(coder_params.context_globs_post, {})
 
 	local loop_rules_path = aip.path.join(CTX.AGENT_FILE_DIR, "templates/loop-rules.md")
@@ -66,8 +65,6 @@ local function loop_start(params)
 	if aip.file.exists(paths.instructions) then
 		table.insert(new_context_globs_post, paths.instructions)
 	end
-
-	new_coder_params.context_globs_post = new_context_globs_post
 
 	-- Build and display loop-start summary
 	aip.run.pin("next_prompt", { label = "    Next Prompt:", content = new_prompt })
@@ -78,7 +75,7 @@ local function loop_start(params)
 	return {
 		_display = "loop-start processed",
 		agent_on = { "start", "end" },
-		coder_params = new_coder_params,
+		coder_params = { context_globs_post = new_context_globs_post },
 		coder_prompt = new_prompt,
 		success = true,
 	}
