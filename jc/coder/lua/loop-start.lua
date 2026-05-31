@@ -36,7 +36,6 @@ local function loop_start(params)
 	end
 
 	-- Load loop instructions and rules template
-	local coder_redo_count = value_or(input.coder_redo_count, 0)
 
 	-- Build new coder prompt
 	local new_prompt = nil
@@ -59,11 +58,16 @@ local function loop_start(params)
 
 	-- Update context_globs_post to include loop-rules and instructions files
 	local coder_params = value_or(input.coder_params, {})
+	local new_coder_params = aip.lua.merge({}, coder_params)
 	local new_context_globs_post = value_or(coder_params.context_globs_post, {})
 
 	local loop_rules_path = aip.path.join(CTX.AGENT_FILE_DIR, "templates/loop-rules.md")
 	table.insert(new_context_globs_post, loop_rules_path)
-	table.insert(new_context_globs_post, paths.instructions)
+	if aip.file.exists(paths.instructions) then
+		table.insert(new_context_globs_post, paths.instructions)
+	end
+
+	new_coder_params.context_globs_post = new_context_globs_post
 
 	-- Build and display loop-start summary
 	aip.run.pin("next_prompt", { label = "    Next Prompt:", content = new_prompt })
@@ -74,9 +78,7 @@ local function loop_start(params)
 	return {
 		_display = "loop-start processed",
 		agent_on = { "start", "end" },
-		coder_params = {
-			context_globs_post = new_context_globs_post,
-		},
+		coder_params = new_coder_params,
 		coder_prompt = new_prompt,
 		success = true,
 	}
