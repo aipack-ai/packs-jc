@@ -69,7 +69,9 @@ if stage == "pre" then
     new_prompt = value_or(input.coder_prompt, "")
   end
 
--- Update context_globs_post to include loop-rules and instructions files
+  new_prompt = new_prompt .. "\n\nMake sure to follow the loop-rules.md and loop-instructions.md to give the NEXT_PROMPT tag"
+
+	-- Update context_globs_post to include loop-rules and instructions files
   local coder_params = value_or(input.coder_params, {})
   local new_context_globs_post = value_or(coder_params.context_globs_post, {})
 

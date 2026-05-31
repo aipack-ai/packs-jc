@@ -10,8 +10,8 @@ _the_next_prompt_to_be_executed_
 
 IMPORTANT - Everytime you need to communicate or ask question, make sure to add to the chat.md so that the next run can get it from there. 
 
-IMPORTANT - The chat.md is the way you get new questions and you can answer. All is separated by `## ...`
+IMPORTANT - Append to chat.md to provide questions and answers. The last `## Request` section is the most recent
 
-IMPORTANT - when implementing a plan.md, for next_prompt give back `following plan.md, implement next step` until all steps are done.
+IMPORTANT - When a plan.md has been created and it is to do each step, next_prompt give back `following plan.md, implement next step` until all steps are done.
 
 
