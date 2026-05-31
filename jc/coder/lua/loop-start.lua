@@ -1,5 +1,10 @@
+local loop = require("jc.coder.lua.loop")
+
 local function loop_start(params)
 	aip.run.set_label("loop-start")
+
+	local workbench = params.workbench
+	local input = params.inputs
 
 	-- Workbench absent: skip with a note
 	if workbench == nil then
@@ -11,10 +16,15 @@ local function loop_start(params)
 	end
 
 	-- Workbench present: set up loop directory
+	local paths = loop.get_loop_paths(workbench)
+	local loop_dir = paths.dir
+	local original_prompt_path = paths.original_prompt
+	local instructions_path = paths.instructions
+	local prompt_path = paths.prompt
+
 	aip.file.ensure_dir(loop_dir)
 
 	-- Save original user prompt on first run
-	local original_prompt_path = loop_dir .. "/original-user-prompt.md"
 	if not aip.file.exists(original_prompt_path) then
 		aip.file.save(original_prompt_path, value_or(input.coder_prompt, ""))
 	end
@@ -75,3 +85,7 @@ local function loop_start(params)
 		success = true,
 	}
 end
+
+return {
+	loop_start = loop_start,
+}
