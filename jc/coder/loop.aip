@@ -45,7 +45,7 @@ if stage == "pre" then
     local agent_result = aip.agent.run("loop-make-inst", {
       inputs = {{loop_dir = loop_dir}}
     })
-    if not agent_result or not agent_result.success then
+      if not agent_result or not agent_result.outputs or #agent_result.outputs == 0 or not agent_result.outputs[1].success then
       aip.run.pin("loop-make-inst-error", "Failed to generate loop-instructions.md")
     end
   end
