@@ -7,21 +7,16 @@
 local stage = input.stage            -- "pre" or "post"
 local workbench = input.coder_workbench
 
--- Compute common values once
-local loop_dir = nil
-local prompt_path = nil
-local instructions_path = nil
+-- Compute common paths once
+local loop_paths = nil
 if workbench ~= nil then
-  local loop_util = dofile(aip.path.join(CTX.AGENT_FILE_DIR, "lua/loop.lua"))
-  loop_dir = loop_util.get_loop_dir(workbench)
-  prompt_path = loop_dir .. "/next-prompt.md"
-  instructions_path = loop_dir .. "/loop-instructions.md"
+  local loop_util = require("jc.coder.lua.loop")
+  loop_paths = loop_util.get_loop_paths(workbench)
 end
 
--- ---- START (pre) stage ----
 if stage == "pre" then
-	-- TODO call loop_start
-	
+  local loop_start = require("jc.coder.lua.loop-start").loop_start
+  return loop_start({ workbench = workbench, inputs = input, loop_paths = loop_paths })
 -- ---- END (post) stage ----
 elseif stage == "post" then
   aip.run.set_label("loop-end")
@@ -30,14 +25,14 @@ elseif stage == "post" then
     return { success = true, coder_redo = false }
   end
 
-  aip.file.ensure_dir(loop_dir)
-  aip.file.ensure_exists(prompt_path, "")
+  aip.file.ensure_dir(loop_paths.dir)
+  aip.file.ensure_exists(loop_paths.prompt, "")
 
   -- Scan extruded AI responses for <NEXT_PROMPT> tags
   local next_tags = {}
- local responses = value_or(input.coder_responses, {})
+  local responses = value_or(input.coder_responses, {})
   for _, resp in ipairs(responses) do
-   local extruded = value_or(resp.content_extruded, "")
+    local extruded = value_or(resp.content_extruded, "")
     local tags = aip.tag.extract(extruded, "NEXT_PROMPT")
     for _, tag in ipairs(tags) do
       table.insert(next_tags, tag.content or "")
@@ -59,7 +54,7 @@ elseif stage == "post" then
   end
 
   if #next_tags > 0 then
-    aip.file.save(prompt_path, new_content)
+    aip.file.save(loop_paths.prompt, new_content)
     aip.run.pin("loop-end", {label = "Next prompt:", content = new_content})
     return {
       coder_redo = true,
@@ -70,7 +65,7 @@ elseif stage == "post" then
   -- No next prompt requested: write THE_END marker and pin
   local coder_redo_count = value_or(input.coder_redo_count, 0)
   local end_content = "THE_END\n\n```yaml\ncoder_redo_count: " .. tostring(coder_redo_count) .. "\n```\n"
-  aip.file.save(prompt_path, end_content)
+  aip.file.save(loop_paths.prompt, end_content)
   aip.run.pin("loop-end", "No next prompt requested. Loop ended (coder_redo_count=" .. tostring(coder_redo_count) .. ").")
   return {
     coder_redo = false,

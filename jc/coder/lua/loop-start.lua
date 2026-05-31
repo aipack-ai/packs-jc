@@ -16,23 +16,19 @@ local function loop_start(params)
 	end
 
 	-- Workbench present: set up loop directory
-	local paths = loop.get_loop_paths(workbench)
-	local loop_dir = paths.dir
-	local original_prompt_path = paths.original_prompt
-	local instructions_path = paths.instructions
-	local prompt_path = paths.prompt
+	local paths = params.loop_paths or loop.get_loop_paths(workbench)
 
-	aip.file.ensure_dir(loop_dir)
+	aip.file.ensure_dir(paths.dir)
 
 	-- Save original user prompt on first run
-	if not aip.file.exists(original_prompt_path) then
-		aip.file.save(original_prompt_path, value_or(input.coder_prompt, ""))
+	if not aip.file.exists(paths.original_prompt) then
+		aip.file.save(paths.original_prompt, value_or(input.coder_prompt, ""))
 	end
 
 	-- Generate loop instructions if missing
-	if not aip.file.exists(instructions_path) then
+	if not aip.file.exists(paths.instructions) then
 		local agent_result = aip.agent.run("loop-make-inst", {
-			inputs = { { loop_dir = loop_dir } }
+			inputs = { { loop_dir = paths.dir } }
 		})
 		if not agent_result or not agent_result.outputs or #agent_result.outputs == 0 or not agent_result.outputs[1].success then
 			aip.run.pin("loop-make-inst-error", "Failed to generate loop-instructions.md")
@@ -44,8 +40,8 @@ local function loop_start(params)
 
 	-- Build new coder prompt
 	local new_prompt = nil
-	aip.file.ensure_exists(prompt_path, "")
-	local next_prompt_raw = aip.file.load(prompt_path)
+	aip.file.ensure_exists(paths.prompt, "")
+	local next_prompt_raw = aip.file.load(paths.prompt)
 	local next_prompt_content = nil
 	if next_prompt_raw then
 		next_prompt_content = aip.text.trim(next_prompt_raw.content)
@@ -53,7 +49,7 @@ local function loop_start(params)
 
 	if next_prompt_content and next_prompt_content ~= "" and next_prompt_content:sub(1, 7) ~= "THE_END" then
 		new_prompt = next_prompt_content
-		aip.file.save(prompt_path, "") -- clear to avoid reusing on redo
+		aip.file.save(paths.prompt, "") -- clear to avoid reusing on redo
 	else
 		new_prompt = value_or(input.coder_prompt, "")
 	end
@@ -67,7 +63,7 @@ local function loop_start(params)
 
 	local loop_rules_path = aip.path.join(CTX.AGENT_FILE_DIR, "templates/loop-rules.md")
 	table.insert(new_context_globs_post, loop_rules_path)
-	table.insert(new_context_globs_post, instructions_path)
+	table.insert(new_context_globs_post, paths.instructions)
 
 	-- Build and display loop-start summary
 	aip.run.pin("next_prompt", { label = "    Next Prompt:", content = new_prompt })
