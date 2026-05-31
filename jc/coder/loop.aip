@@ -43,7 +43,7 @@ if stage == "pre" then
   -- Generate loop instructions if missing
   if not aip.file.exists(instructions_path) then
     local agent_result = aip.agent.run("loop-make-inst", {
-      inputs = {{workbench_dir = loop_dir}}
+      inputs = {{loop_dir = loop_dir}}
     })
     if not agent_result or not agent_result.success then
       aip.run.pin("loop-make-inst-error", "Failed to generate loop-instructions.md")
