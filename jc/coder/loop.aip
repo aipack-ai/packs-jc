@@ -69,13 +69,18 @@ if stage == "pre" then
     new_prompt = value_or(input.coder_prompt, "")
   end
 
-  -- Update context_globs_post to include instructions file
+-- Update context_globs_post to include loop-rules and instructions files
   local coder_params = value_or(input.coder_params, {})
   local new_context_globs_post = value_or(coder_params.context_globs_post, {})
+
+  local loop_rules_path = aip.path.join(CTX.AGENT_FILE_DIR, "templates/loop-rules.md")
+  table.insert(new_context_globs_post, loop_rules_path)
   table.insert(new_context_globs_post, instructions_path)
 
   -- Build and display loop-start summary
-  aip.run.pin("next_prompt", {label = "Next Prompt:", content = new_prompt})
+  aip.run.pin("next_prompt", {label = "    Next Prompt:", content = new_prompt})
+  local context_globs_post_str = table.concat(new_context_globs_post, "\n")
+  aip.run.pin("loop-start", {label =  "+Context Files:", content = context_globs_post_str})
   print("new_context_globs_post", new_context_globs_post)
 
   return {
