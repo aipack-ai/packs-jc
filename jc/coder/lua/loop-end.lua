@@ -5,6 +5,7 @@ local function loop_end(params)
 
 	local workbench = params.workbench
 	local inputs = params.inputs
+	---@cast inputs {}
 
 	-- Read check flags from agent config (build, test, clippy)
 	local agent_config = value_or(inputs.agent_config, {})
@@ -20,6 +21,8 @@ local function loop_end(params)
 	end
 
 	local loop_paths = params.loop_paths or loop.get_loop_paths(workbench)
+
+	---@cast loop_paths -nil
 
 	-- Run cargo checks (build, test, clippy) if any flags are enabled
 	local any_check_enabled = check_flags.build or check_flags.test or check_flags.clippy
@@ -50,6 +53,17 @@ local function loop_end(params)
 					aip.run.pin("loop-check-error", { label = "cargo " .. check.cmd, content = result.error })
 				end
 			end
+		end
+
+		-- Clean up stale check files for disabled flags
+		for _, check in ipairs(checks) do
+			if not check.enabled then
+				local file_path = data_check_dir .. "/" .. check.file_name
+				if aip.file.exists(file_path) then
+					aip.file.delete(file_path)
+				end
+			end
+		end
 
 		-- Check for failures and enter fix mode if any check output exists
 		local any_failure = false
@@ -140,10 +154,12 @@ local function loop_end(params)
 	local end_content = "THE_END\n\n```yaml\ncoder_redo_count: " .. tostring(coder_redo_count) .. "\n```\n"
 	aip.file.save(loop_paths.prompt, end_content)
 	aip.run.pin("loop-end", "No next prompt requested. Loop ended (coder_redo_count=" .. tostring(coder_redo_count) .. ").")
+
 	return {
 		coder_redo = false,
 		success = true,
 	}
+
 end
 
 return {
