@@ -25,16 +25,16 @@ local function loop_end(params)
 	---@cast loop_paths -nil
 
 	-- Run cargo checks (build, test, clippy) if any flags are enabled
+	local checks = {
+		{ enabled = check_flags.build,  cmd = "build",  file_name = "cargo-build.txt" },
+		{ enabled = check_flags.test,   cmd = "test",   file_name = "cargo-test.txt" },
+		{ enabled = check_flags.clippy, cmd = "clippy", file_name = "cargo-clippy.txt" },
+	}
+
 	local any_check_enabled = check_flags.build or check_flags.test or check_flags.clippy
 	if any_check_enabled and workbench.data_dir then
 		local data_check_dir = workbench.data_dir .. "/check"
 		aip.file.ensure_dir(data_check_dir)
-
-		local checks = {
-			{ enabled = check_flags.build,  cmd = "build",  file_name = "cargo-build.txt" },
-			{ enabled = check_flags.test,   cmd = "test",   file_name = "cargo-test.txt" },
-			{ enabled = check_flags.clippy, cmd = "clippy", file_name = "cargo-clippy.txt" },
-		}
 
 		for _, check in ipairs(checks) do
 			if check.enabled then
@@ -54,17 +54,6 @@ local function loop_end(params)
 				end
 			end
 		end
-
-		-- Clean up stale check files for disabled flags
-		for _, check in ipairs(checks) do
-			if not check.enabled then
-				local file_path = data_check_dir .. "/" .. check.file_name
-				if aip.file.exists(file_path) then
-					aip.file.delete(file_path)
-				end
-			end
-		end
-
 		-- Check for failures and enter fix mode if any check output exists
 		local any_failure = false
 		local failing_paths = {}
@@ -109,6 +98,20 @@ local function loop_end(params)
 			end
 		end
 	end
+
+	-- Clean up stale check files for disabled flags
+	if workbench.data_dir then
+		local data_check_dir = workbench.data_dir .. "/check"
+		for _, check in ipairs(checks) do
+			if not check.enabled then
+				local file_path = data_check_dir .. "/" .. check.file_name
+				if aip.file.exists(file_path) then
+					aip.file.delete(file_path)
+				end
+			end
+		end
+	end
+
 
 
 	aip.file.ensure_dir(loop_paths.dir)

@@ -74,8 +74,10 @@ local function loop_start(params)
 	end
 
 	if new_prompt then
-		new_prompt = new_prompt ..
-			"\n\nMake sure to follow the loop-rules.md and loop-instructions.md to give the NEXT_PROMPT tag"
+		if not fix_mode then
+			new_prompt = new_prompt ..
+				"\n\nMake sure to follow the loop-rules.md and loop-instructions.md to give the NEXT_PROMPT tag"
+		end
 	else
 		new_prompt = value_or(input.coder_prompt, "")
 	end
