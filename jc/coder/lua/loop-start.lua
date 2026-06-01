@@ -6,6 +6,14 @@ local function loop_start(params)
 	local workbench = params.workbench
 	local input = params.inputs
 
+	-- Read check flags from agent config (build, test, clippy)
+	local agent_config = value_or(input.agent_config, {})
+	local check_flags = {
+		build = value_or(agent_config.build, false),
+		test = value_or(agent_config.test, false),
+		clippy = value_or(agent_config.clippy, false),
+	}
+
 	-- Workbench absent: skip with a note
 	if workbench == nil then
 		aip.run.pin("loop-start", "Loop sub-agent skipped because workbench is not enabled.")
@@ -77,6 +85,7 @@ local function loop_start(params)
 		agent_on = { "start", "end" },
 		coder_params = { context_globs_post = new_context_globs_post },
 		coder_prompt = new_prompt,
+		check_flags = check_flags,
 		success = true,
 	}
 end

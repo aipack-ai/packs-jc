@@ -6,6 +6,14 @@ local function loop_end(params)
 	local workbench = params.workbench
 	local inputs = params.inputs
 
+	-- Read check flags from agent config (build, test, clippy)
+	local agent_config = value_or(inputs.agent_config, {})
+	local check_flags = {
+		build = value_or(agent_config.build, false),
+		test = value_or(agent_config.test, false),
+		clippy = value_or(agent_config.clippy, false),
+	}
+
 	-- Workbench absent: skip
 	if workbench == nil then
 		return { success = true, coder_redo = false }
