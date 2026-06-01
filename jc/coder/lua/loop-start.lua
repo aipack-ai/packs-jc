@@ -1,4 +1,5 @@
 local loop = require("loop")
+local loop_check = require("loop-check")
 
 local function loop_start(params)
 	aip.run.set_label("loop-start")
@@ -8,11 +9,7 @@ local function loop_start(params)
 
 	-- Read check flags from agent config (build, test, clippy)
 	local agent_config = value_or(input.agent_config, {})
-	local check_flags = {
-		build = value_or(agent_config.build, false),
-		test = value_or(agent_config.test, false),
-		clippy = value_or(agent_config.clippy, false),
-	}
+	local check_flags = loop_check.get_check_flags(agent_config)
 
 	-- Workbench absent: skip with a note
 	if workbench == nil then
@@ -44,16 +41,10 @@ local function loop_start(params)
 	end
 
 	-- Check if fix-prompt.md exists (indicating fix mode)
-	local fix_prompt_path = paths.dir .. "/check/fix-prompt.md"
+	local fix_mode, fix_prompt_content = loop_check.is_fix_mode(paths.dir)
 	local new_prompt = nil
-	local fix_mode = false
-
-	if aip.file.exists(fix_prompt_path) then
-		fix_mode = true
-		local fix_prompt_raw = aip.file.load(fix_prompt_path)
-		if fix_prompt_raw and fix_prompt_raw.content then
-			new_prompt = aip.text.trim(fix_prompt_raw.content)
-		end
+	if fix_mode then
+		new_prompt = fix_prompt_content
 	end
 
 	if not fix_mode then
@@ -93,15 +84,12 @@ local function loop_start(params)
 	end
 
 	-- In fix mode, include the check output files so auto-context can see them
-	if fix_mode and workbench.data_dir then
-		local data_check_dir = workbench.data_dir .. "/check"
-		if aip.file.exists(data_check_dir) then
-			local check_files = {"cargo-build.txt", "cargo-test.txt", "cargo-clippy.txt"}
-			for _, fname in ipairs(check_files) do
-				local fpath = data_check_dir .. "/" .. fname
-				if aip.file.exists(fpath) then
-					table.insert(new_context_globs_post, fpath)
-				end
+	if fix_mode then
+		local data_check_dir = loop_check.get_data_check_dir(workbench)
+		if data_check_dir then
+			local check_paths = loop_check.get_check_file_paths(data_check_dir)
+			for _, p in ipairs(check_paths) do
+				table.insert(new_context_globs_post, p)
 			end
 		end
 	end

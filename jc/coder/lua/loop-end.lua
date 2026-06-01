@@ -1,4 +1,5 @@
 local loop = require("loop")
+local loop_check = require("loop-check")
 
 local function loop_end(params)
 	aip.run.set_label("loop-end")
@@ -9,11 +10,7 @@ local function loop_end(params)
 
 	-- Read check flags from agent config (build, test, clippy)
 	local agent_config = value_or(inputs.agent_config, {})
-	local check_flags = {
-		build = value_or(agent_config.build, false),
-		test = value_or(agent_config.test, false),
-		clippy = value_or(agent_config.clippy, false),
-	}
+	local check_flags = loop_check.get_check_flags(agent_config)
 
 	-- Workbench absent: skip
 	if workbench == nil then
@@ -119,6 +116,18 @@ local function loop_end(params)
 					coder_redo = true,
 					success = true,
 				}
+			end
+		end
+	end
+
+	-- Run cargo checks and manage fix mode
+	if loop_check.any_check_enabled(check_flags) then
+		local data_check_dir = loop_check.ensure_data_check_dir(workbench)
+		if data_check_dir then
+			local failing_paths = loop_check.run_checks(check_flags, data_check_dir)
+			local fix_result = loop_check.update_fix_mode(loop_paths.dir, failing_paths)
+			if fix_result.should_redo then
+				return { coder_redo = true, success = true }
 			end
 		end
 	end
