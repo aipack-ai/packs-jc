@@ -19,6 +19,38 @@ local function loop_end(params)
 		return { success = true, coder_redo = false }
 	end
 
+	-- Run cargo checks (build, test, clippy) if any flags are enabled
+	local any_check_enabled = check_flags.build or check_flags.test or check_flags.clippy
+	if any_check_enabled and workbench.data_dir then
+		local data_check_dir = workbench.data_dir .. "/check"
+		aip.file.ensure_dir(data_check_dir)
+
+		local checks = {
+			{ enabled = check_flags.build, cmd = "build", file_name = "cargo-build.txt" },
+			{ enabled = check_flags.test, cmd = "test", file_name = "cargo-test.txt" },
+			{ enabled = check_flags.clippy, cmd = "clippy", file_name = "cargo-clippy.txt" },
+		}
+
+		for _, check in ipairs(checks) do
+			if check.enabled then
+				local result = aip.cmd.exec("cargo", check.cmd)
+				if not result.error then
+					local stderr = aip.text.trim(value_or(result.stderr, ""))
+					local file_path = data_check_dir .. "/" .. check.file_name
+					if stderr and stderr ~= "" then
+						aip.file.save(file_path, stderr)
+					else
+						if aip.file.exists(file_path) then
+							aip.file.delete(file_path)
+						end
+					end
+				else
+					aip.run.pin("loop-check-error", { label = "cargo " .. check.cmd, content = result.error })
+				end
+			end
+		end
+	end
+
 	local loop_paths = params.loop_paths or loop.get_loop_paths(workbench)
 
 	aip.file.ensure_dir(loop_paths.dir)
