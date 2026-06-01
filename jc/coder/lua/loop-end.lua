@@ -19,6 +19,8 @@ local function loop_end(params)
 		return { success = true, coder_redo = false }
 	end
 
+	local loop_paths = params.loop_paths or loop.get_loop_paths(workbench)
+
 	-- Run cargo checks (build, test, clippy) if any flags are enabled
 	local any_check_enabled = check_flags.build or check_flags.test or check_flags.clippy
 	if any_check_enabled and workbench.data_dir then
@@ -48,10 +50,53 @@ local function loop_end(params)
 					aip.run.pin("loop-check-error", { label = "cargo " .. check.cmd, content = result.error })
 				end
 			end
+
+		-- Check for failures and enter fix mode if any check output exists
+		local any_failure = false
+		local failing_paths = {}
+		for _, check in ipairs(checks) do
+			if check.enabled then
+				local file_path = data_check_dir .. "/" .. check.file_name
+				if aip.file.exists(file_path) then
+					any_failure = true
+					local rel = aip.path.diff(file_path, CTX.WORKSPACE_DIR)
+					table.insert(failing_paths, rel or file_path)
+				end
+			end
+		end
+
+		local fix_prompt_dir = loop_paths.dir .. "/check"
+		local fix_prompt_path = fix_prompt_dir .. "/fix-prompt.md"
+
+		if any_failure then
+			aip.file.ensure_dir(fix_prompt_dir)
+			local lines = {}
+			table.insert(lines, "Build/test/clippy checks have FAILED.")
+			table.insert(lines, "")
+			table.insert(lines, "The following check output files contain errors or warnings:")
+			table.insert(lines, "")
+			for _, p in ipairs(failing_paths) do
+				table.insert(lines, "- " .. p)
+			end
+			table.insert(lines, "")
+			table.insert(lines, "Review the errors in these files (provided in context). Fix all issues in the codebase.")
+			table.insert(lines, "Do not emit a <NEXT_PROMPT> tag; the loop will re-run checks automatically.")
+			local fix_prompt_content = table.concat(lines, "\n")
+			aip.file.save(fix_prompt_path, fix_prompt_content)
+			aip.run.pin("loop-fix-mode", "Entering fix mode due to check failures")
+			return {
+				coder_redo = true,
+				success = true,
+			}
+		else
+			-- No failures, delete fix prompt if exists
+			if aip.file.exists(fix_prompt_path) then
+				aip.file.delete(fix_prompt_path)
+			end
+		end
 		end
 	end
 
-	local loop_paths = params.loop_paths or loop.get_loop_paths(workbench)
 
 	aip.file.ensure_dir(loop_paths.dir)
 	aip.file.ensure_exists(loop_paths.prompt, "")
