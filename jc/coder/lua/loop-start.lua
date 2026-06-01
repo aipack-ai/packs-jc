@@ -43,26 +43,42 @@ local function loop_start(params)
 		end
 	end
 
-	-- Load loop instructions and rules template
-
-	-- Build new coder prompt
+	-- Check if fix-prompt.md exists (indicating fix mode)
+	local fix_prompt_path = paths.dir .. "/check/fix-prompt.md"
 	local new_prompt = nil
-	aip.file.ensure_exists(paths.prompt, "")
-	local next_prompt_raw = aip.file.load(paths.prompt)
-	local next_prompt_content = nil
-	if next_prompt_raw then
-		next_prompt_content = aip.text.trim(next_prompt_raw.content)
+	local fix_mode = false
+
+	if aip.file.exists(fix_prompt_path) then
+		fix_mode = true
+		local fix_prompt_raw = aip.file.load(fix_prompt_path)
+		if fix_prompt_raw and fix_prompt_raw.content then
+			new_prompt = aip.text.trim(fix_prompt_raw.content)
+		end
 	end
 
-	if next_prompt_content and next_prompt_content ~= "" and next_prompt_content:sub(1, 7) ~= "THE_END" then
-		new_prompt = next_prompt_content
-		aip.file.save(paths.prompt, "") -- clear to avoid reusing on redo
+	if not fix_mode then
+		-- Build new coder prompt from regular prompt.txt
+		aip.file.ensure_exists(paths.prompt, "")
+		local next_prompt_raw = aip.file.load(paths.prompt)
+		local next_prompt_content = nil
+		if next_prompt_raw then
+			next_prompt_content = aip.text.trim(next_prompt_raw.content)
+		end
+
+		if next_prompt_content and next_prompt_content ~= "" and next_prompt_content:sub(1, 7) ~= "THE_END" then
+			new_prompt = next_prompt_content
+			aip.file.save(paths.prompt, "") -- clear to avoid reusing on redo
+		else
+			new_prompt = value_or(input.coder_prompt, "")
+		end
+	end
+
+	if new_prompt then
+		new_prompt = new_prompt ..
+			"\n\nMake sure to follow the loop-rules.md and loop-instructions.md to give the NEXT_PROMPT tag"
 	else
 		new_prompt = value_or(input.coder_prompt, "")
 	end
-
-	new_prompt = new_prompt ..
-			"\n\nMake sure to follow the loop-rules.md and loop-instructions.md to give the NEXT_PROMPT tag"
 
 	-- Update context_globs_post to include loop-rules and instructions files
 	local coder_params = value_or(input.coder_params, {})
@@ -72,6 +88,20 @@ local function loop_start(params)
 	table.insert(new_context_globs_post, loop_rules_path)
 	if aip.file.exists(paths.instructions) then
 		table.insert(new_context_globs_post, paths.instructions)
+	end
+
+	-- In fix mode, include the check output files so auto-context can see them
+	if fix_mode and workbench.data_dir then
+		local data_check_dir = workbench.data_dir .. "/check"
+		if aip.file.exists(data_check_dir) then
+			local check_files = {"cargo-build.txt", "cargo-test.txt", "cargo-clippy.txt"}
+			for _, fname in ipairs(check_files) do
+				local fpath = data_check_dir .. "/" .. fname
+				if aip.file.exists(fpath) then
+					table.insert(new_context_globs_post, fpath)
+				end
+			end
+		end
 	end
 
 	-- Build and display loop-start summary
