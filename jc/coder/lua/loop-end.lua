@@ -42,7 +42,8 @@ local function loop_end(params)
 				if not result.error then
 					local stderr = aip.text.trim(value_or(result.stderr, ""))
 					local file_path = data_check_dir .. "/" .. check.file_name
-					if stderr and stderr ~= "" then
+					local has_error = stderr and stderr ~= "" and string.find(stderr:lower(), "error") ~= nil
+					if has_error then
 						aip.file.save(file_path, stderr)
 					else
 						if aip.file.exists(file_path) then
