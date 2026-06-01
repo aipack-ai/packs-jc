@@ -5,7 +5,7 @@ local function loop_end(params)
 
 	local workbench = params.workbench
 	local inputs = params.inputs
-	---@cast inputs {}
+	---@cast inputs -nil
 
 	-- Read check flags from agent config (build, test, clippy)
 	local agent_config = value_or(inputs.agent_config, {})
@@ -31,8 +31,8 @@ local function loop_end(params)
 		aip.file.ensure_dir(data_check_dir)
 
 		local checks = {
-			{ enabled = check_flags.build, cmd = "build", file_name = "cargo-build.txt" },
-			{ enabled = check_flags.test, cmd = "test", file_name = "cargo-test.txt" },
+			{ enabled = check_flags.build,  cmd = "build",  file_name = "cargo-build.txt" },
+			{ enabled = check_flags.test,   cmd = "test",   file_name = "cargo-test.txt" },
 			{ enabled = check_flags.clippy, cmd = "clippy", file_name = "cargo-clippy.txt" },
 		}
 
@@ -108,7 +108,6 @@ local function loop_end(params)
 				aip.file.delete(fix_prompt_path)
 			end
 		end
-		end
 	end
 
 
@@ -159,7 +158,6 @@ local function loop_end(params)
 		coder_redo = false,
 		success = true,
 	}
-
 end
 
 return {
