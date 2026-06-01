@@ -54,24 +54,41 @@ local function loop_end(params)
 				end
 			end
 		end
-		-- Check for failures and enter fix mode if any check output exists
-		local any_failure = false
+	end
+
+	-- Clean up stale check files for disabled flags
+	if workbench.data_dir then
+		local data_check_dir = workbench.data_dir .. "/check"
+		for _, check in ipairs(checks) do
+			if not check.enabled then
+				local file_path = data_check_dir .. "/" .. check.file_name
+				if aip.file.exists(file_path) then
+					aip.file.delete(file_path)
+				end
+			end
+		end
+	end
+
+	-- Determine fix mode state
+	if workbench.data_dir then
+		local fix_prompt_dir = loop_paths.dir .. "/check"
+		local fix_prompt_path = fix_prompt_dir .. "/fix-prompt.md"
+		local data_check_dir = workbench.data_dir .. "/check"
+
+		-- Collect any check output file that exists for enabled flags
 		local failing_paths = {}
 		for _, check in ipairs(checks) do
 			if check.enabled then
 				local file_path = data_check_dir .. "/" .. check.file_name
 				if aip.file.exists(file_path) then
-					any_failure = true
 					local rel = aip.path.diff(file_path, CTX.WORKSPACE_DIR)
 					table.insert(failing_paths, rel or file_path)
 				end
 			end
 		end
 
-		local fix_prompt_dir = loop_paths.dir .. "/check"
-		local fix_prompt_path = fix_prompt_dir .. "/fix-prompt.md"
-
-		if any_failure then
+		if #failing_paths > 0 then
+			-- At least one check failed: enter or stay in fix mode
 			aip.file.ensure_dir(fix_prompt_dir)
 			local lines = {}
 			table.insert(lines, "Build/test/clippy checks have FAILED.")
@@ -92,22 +109,15 @@ local function loop_end(params)
 				success = true,
 			}
 		else
-			-- No failures, delete fix prompt if exists
+			-- No check files exist for enabled flags
 			if aip.file.exists(fix_prompt_path) then
 				aip.file.delete(fix_prompt_path)
-			end
-		end
-	end
-
-	-- Clean up stale check files for disabled flags
-	if workbench.data_dir then
-		local data_check_dir = workbench.data_dir .. "/check"
-		for _, check in ipairs(checks) do
-			if not check.enabled then
-				local file_path = data_check_dir .. "/" .. check.file_name
-				if aip.file.exists(file_path) then
-					aip.file.delete(file_path)
-				end
+				aip.run.pin("loop-fix-mode", "Exiting fix mode; all checks passed or checks disabled.")
+				-- Force a redo to resume the deferred prompt
+				return {
+					coder_redo = true,
+					success = true,
+				}
 			end
 		end
 	end
