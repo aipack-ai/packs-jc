@@ -21,118 +21,15 @@ local function loop_end(params)
 
 	---@cast loop_paths -nil
 
-	-- Run cargo checks (build, test, clippy) if any flags are enabled
-	local checks = {
-		{ enabled = check_flags.build,  cmd = "build",  file_name = "cargo-build.txt" },
-		{ enabled = check_flags.test,   cmd = "test",   file_name = "cargo-test.txt" },
-		{ enabled = check_flags.clippy, cmd = "clippy", file_name = "cargo-clippy.txt" },
-	}
-
-	local any_check_enabled = check_flags.build or check_flags.test or check_flags.clippy
-	if any_check_enabled and workbench.data_dir then
-		local data_check_dir = workbench.data_dir .. "/check"
-		aip.file.ensure_dir(data_check_dir)
-
-		for _, check in ipairs(checks) do
-			if check.enabled then
-				local result = aip.cmd.exec("cargo", check.cmd)
-				if not result.error then
-					local stderr = aip.text.trim(value_or(result.stderr, ""))
-					local file_path = data_check_dir .. "/" .. check.file_name
-					local has_error = stderr and stderr ~= "" and string.find(stderr:lower(), "error") ~= nil
-					if has_error then
-						aip.file.save(file_path, stderr)
-					else
-						if aip.file.exists(file_path) then
-							aip.file.delete(file_path)
-						end
-					end
-				else
-					aip.run.pin("loop-check-error", { label = "cargo " .. check.cmd, content = result.error })
-				end
-			end
-		end
-	end
-
-	-- Clean up stale check files for disabled flags
-	if workbench.data_dir then
-		local data_check_dir = workbench.data_dir .. "/check"
-		for _, check in ipairs(checks) do
-			if not check.enabled then
-				local file_path = data_check_dir .. "/" .. check.file_name
-				if aip.file.exists(file_path) then
-					aip.file.delete(file_path)
-				end
-			end
-		end
-	end
-
-	-- Determine fix mode state
-	if workbench.data_dir then
-		local fix_prompt_dir = loop_paths.dir .. "/check"
-		local fix_prompt_path = fix_prompt_dir .. "/fix-prompt.md"
-		local data_check_dir = workbench.data_dir .. "/check"
-
-		-- Collect any check output file that exists for enabled flags
-		local failing_paths = {}
-		for _, check in ipairs(checks) do
-			if check.enabled then
-				local file_path = data_check_dir .. "/" .. check.file_name
-				if aip.file.exists(file_path) then
-					local rel = aip.path.diff(file_path, CTX.WORKSPACE_DIR)
-					table.insert(failing_paths, rel or file_path)
-				end
-			end
-		end
-
-		if #failing_paths > 0 then
-			-- At least one check failed: enter or stay in fix mode
-			aip.file.ensure_dir(fix_prompt_dir)
-			local lines = {}
-			table.insert(lines, "Build/test/clippy checks have FAILED.")
-			table.insert(lines, "")
-			table.insert(lines, "The following check output files contain errors or warnings:")
-			table.insert(lines, "")
-			for _, p in ipairs(failing_paths) do
-				table.insert(lines, "- " .. p)
-			end
-			table.insert(lines, "")
-			table.insert(lines, "Review the errors in these files (provided in context). Fix all issues in the codebase.")
-			table.insert(lines, "Do not emit a <NEXT_PROMPT> tag; the loop will re-run checks automatically.")
-			local fix_prompt_content = table.concat(lines, "\n")
-			aip.file.save(fix_prompt_path, fix_prompt_content)
-			aip.run.pin("loop-fix-mode", "Entering fix mode due to check failures")
-			return {
-				coder_redo = true,
-				success = true,
-			}
-		else
-			-- No check files exist for enabled flags
-			if aip.file.exists(fix_prompt_path) then
-				aip.file.delete(fix_prompt_path)
-				aip.run.pin("loop-fix-mode", "Exiting fix mode; all checks passed or checks disabled.")
-				-- Force a redo to resume the deferred prompt
-				return {
-					coder_redo = true,
-					success = true,
-				}
-			end
-		end
-	end
-
 	-- Run cargo checks and manage fix mode
-	if loop_check.any_check_enabled(check_flags) then
-		local data_check_dir = loop_check.ensure_data_check_dir(workbench)
-		if data_check_dir then
-			local failing_paths = loop_check.run_checks(check_flags, data_check_dir)
-			local fix_result = loop_check.update_fix_mode(loop_paths.dir, failing_paths)
-			if fix_result.should_redo then
-				return { coder_redo = true, success = true }
-			end
+	local data_check_dir = loop_check.ensure_data_check_dir(workbench)
+	if data_check_dir then
+		local failing_paths = loop_check.run_checks(check_flags, data_check_dir)
+		local fix_result = loop_check.update_fix_mode(loop_paths.dir, failing_paths)
+		if fix_result.should_redo then
+			return { coder_redo = true, success = true }
 		end
 	end
-
-
 
 	aip.file.ensure_dir(loop_paths.dir)
 	aip.file.ensure_exists(loop_paths.prompt, "")

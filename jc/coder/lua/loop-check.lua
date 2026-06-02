@@ -122,18 +122,47 @@ function loop_check.update_fix_mode(loop_dir, failing_paths)
 
 	if #failing_paths > 0 then
 		aip.file.ensure_dir(fix_dir)
-		local lines = {}
-		table.insert(lines, "Build/test/clippy checks have FAILED.")
-		table.insert(lines, "")
-		table.insert(lines, "The following check output files contain errors or warnings:")
-		table.insert(lines, "")
-		for _, p in ipairs(failing_paths) do
-			local rel = aip.path.diff(p, CTX.WORKSPACE_DIR) or p
-			table.insert(lines, "- " .. rel)
-		end
-		table.insert(lines, "")
-		table.insert(lines, "Review the errors in these files (provided in context). Fix all issues in the codebase.")
-		table.insert(lines, "Do not emit a <NEXT_PROMPT> tag; the loop will re-run checks automatically.")
+        local lines = {}
+        table.insert(lines, "Build/test/clippy checks have FAILED.")
+        table.insert(lines, "")
+
+        -- Collect source files referenced in the error output.
+        local source_files = {}
+        local source_seen = {}
+        for _, p in ipairs(failing_paths) do
+            local record = aip.file.load(p)
+            if record and record.content then
+                local spaths = loop_check.extract_source_file_paths(record.content)
+                for _, sp in ipairs(spaths) do
+                    if not source_seen[sp] then
+                        source_seen[sp] = true
+                        table.insert(source_files, sp)
+                    end
+                end
+            end
+        end
+
+        table.insert(lines, "The following check output files contain full error details (provided in context):")
+        table.insert(lines, "")
+        for _, p in ipairs(failing_paths) do
+            local rel = aip.path.diff(p, CTX.WORKSPACE_DIR) or p
+            table.insert(lines, "- " .. rel)
+        end
+        table.insert(lines, "")
+
+        if #source_files > 0 then
+            table.insert(lines, "Source files referenced in the errors:")
+            table.insert(lines, "")
+            for _, sp in ipairs(source_files) do
+                table.insert(lines, "- " .. sp)
+            end
+            table.insert(lines, "")
+            table.insert(lines, "Review the check output files to understand what needs fixing in the source files above.")
+        else
+            table.insert(lines, "Review the check output files to understand what needs fixing.")
+        end
+        table.insert(lines, "")
+        table.insert(lines, "Do not emit a <NEXT_PROMPT> tag; the loop will re-run checks automatically.")
 		local content = table.concat(lines, "\n")
 		aip.file.save(path, content)
 		aip.run.pin("loop-fix-mode", "Entering fix mode due to check failures")
@@ -162,6 +191,23 @@ function loop_check.get_check_file_paths(data_check_dir)
 		end
 	end
 	return paths
+end
+
+-- Extracts source file paths (e.g., .rs, .toml, .lua) referenced in cargo error output.
+-- Scans the text for patterns like `--> src/main.rs:10:5` or paths ending with those extensions.
+-- Returns a deduplicated list of relative file paths.
+function loop_check.extract_source_file_paths(text)
+    local paths = {}
+    local seen = {}
+    for _, ext in ipairs({"rs", "toml", "lua"}) do
+        for file in string.gmatch(text, "([%w_/%.%-]+%." .. ext .. ")") do
+            if not seen[file] then
+                seen[file] = true
+                table.insert(paths, file)
+            end
+        end
+    end
+    return paths
 end
 
 return loop_check
