@@ -70,10 +70,9 @@ function loop_check.run_checks(check_flags, data_check_dir)
 		if enabled then
 			local result = aip.cmd.exec("cargo", c.cmd)
 			if not result.error then
-				local stderr = aip.text.trim(value_or(result.stderr, ""))
-				local has_error = stderr and stderr ~= "" and string.find(stderr:lower(), "error") ~= nil
-				if has_error then
-					aip.file.save(file_path, stderr)
+				local combined = (result.stdout or "") .. "\n" .. (result.stderr or "")
+				if result.exit ~= 0 then
+					aip.file.save(file_path, combined)
 					table.insert(failing_paths, file_path)
 				else
 					if aip.file.exists(file_path) then
