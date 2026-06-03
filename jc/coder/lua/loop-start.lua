@@ -58,7 +58,6 @@ local function loop_start(params)
 
 		if next_prompt_content and next_prompt_content ~= "" and next_prompt_content:sub(1, 7) ~= "THE_END" then
 			new_prompt = next_prompt_content
-			aip.file.save(paths.prompt, "") -- clear to avoid reusing on redo
 		else
 			new_prompt = value_or(input.coder_prompt, "")
 		end

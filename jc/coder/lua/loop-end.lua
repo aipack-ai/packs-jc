@@ -69,10 +69,11 @@ local function loop_end(params)
 	end
 
 	-- No next prompt requested: write THE_END marker and pin
-	local coder_redo_count = value_or(inputs.coder_redo_count, 0)
-	local end_content = "THE_END\n\n```yaml\ncoder_redo_count: " .. tostring(coder_redo_count) .. "\n```\n"
-	aip.file.save(loop_paths.prompt, end_content)
-	aip.run.pin("loop-end", "No next prompt requested. Loop ended (coder_redo_count=" .. tostring(coder_redo_count) .. ").")
+-- No next prompt requested: remove the prompt file to indicate loop completion
+if aip.file.exists(loop_paths.prompt) then
+    aip.file.delete(loop_paths.prompt)
+end
+aip.run.pin("loop-end", "No next prompt requested. Loop ended.")
 
 	return {
 		coder_redo = false,
