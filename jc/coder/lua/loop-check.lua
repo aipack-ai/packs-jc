@@ -144,7 +144,10 @@ function loop_check.update_fix_mode(loop_dir, failing_paths)
         table.insert(lines, "The following check output files contain full error details (provided in context):")
         table.insert(lines, "")
         for _, p in ipairs(failing_paths) do
-            local rel = aip.path.diff(p, CTX.WORKSPACE_DIR) or p
+            local rel = aip.path.diff(p, CTX.WORKSPACE_DIR)
+            if not rel or rel == "" then
+                rel = p
+            end
             table.insert(lines, "- " .. rel)
         end
         table.insert(lines, "")
