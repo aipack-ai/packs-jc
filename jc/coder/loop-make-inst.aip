@@ -22,7 +22,7 @@ return {
 # Instruction
 
 ```handlebars
-Given the following original user prompt and the loop rules template, generate the `loop-instructions.md` file content. The content should retain all details of the original prompt and structure it into a format suitable for multiple iterative runs, following the guidelines in the loop rules.
+Given the following original user prompt and the loop rules template, generate both the `loop-instructions.md` content and the first `prompt-next.md` content. The content should retain all details of the original prompt and structure the loop instructions suitable for multiple iterative runs, following the guidelines in the loop rules. Then, generate a suitable first prompt for the loop to start executing the task.
 
 **Original User Prompt:**
 
@@ -32,15 +32,30 @@ Given the following original user prompt and the loop rules template, generate t
 
 {{data.loop_rules}}
 
-Now, produce the loop-instructions.md content. Output ONLY the content, with no surrounding code fences, no preamble, no commentary. Just the instructions as they should appear in the file.
+Now, produce the output in two parts separated by a line containing only `=====PROMPT=====`. Before that line, output the loop instructions exactly as they should appear in `loop-instructions.md`. After that line, output the content for `prompt-next.md` without any extra commentary, code fences, or preamble. Just the respective file contents.
 ```
 
 # Output
 
 ```lua
 local instructions_path = input.loop_dir .. "/loop-instructions.md"
+local prompt_path = input.loop_dir .. "/prompt-next.md"
 
-aip.file.save(instructions_path, ai_response.content)
+local content = ai_response.content or ""
 
-return { success = true }
+-- Split by delimiter
+local delim = "=====PROMPT====="
+local i1, i2 = content:find(delim, 1, true)
+if i1 then
+  local instructions = content:sub(1, i1 - 1):gsub("\n$", "")
+  local prompt = content:sub(i2 + 1):gsub("^\n+", ""):gsub("\n+$", "")
+
+  aip.file.save(instructions_path, instructions)
+  aip.file.save(prompt_path, prompt)
+  return { success = true }
+else
+  -- Fallback: just save the whole content as instructions (old behavior)
+  aip.file.save(instructions_path, content)
+  return { success = true }
+end
 ```
