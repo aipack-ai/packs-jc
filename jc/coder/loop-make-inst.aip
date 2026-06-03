@@ -4,7 +4,7 @@
 local loop_dir = input.loop_dir
 
 -- Load original prompt
-local original_path = loop_dir .. "/original-user-prompt.md"
+local original_path = loop_dir .. "/prompt-original.md"
 local original_load = aip.file.load(original_path)
 local original_content = original_load and original_load.content or ""
 

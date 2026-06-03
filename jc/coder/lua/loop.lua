@@ -10,9 +10,9 @@ local function get_loop_paths(wb)
 	local dir = get_loop_dir(wb)
 	return {
 		dir = dir,
-		original_prompt = dir .. "/original-user-prompt.md",
+		original_prompt = dir .. "/prompt-original.md",
 		instructions = dir .. "/loop-instructions.md",
-		prompt = dir .. "/prompt.txt",
+		prompt = dir .. "/prompt-next.md",
 	}
 end
 
