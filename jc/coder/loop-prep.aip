@@ -9,7 +9,6 @@ return data
 
 # Instruction
 
-```handlebars
 Given the following original user prompt and the loop rules template, generate both the `loop-instructions.md` content and the first `prompt-next.md` content. The content should retain all details of the original prompt and structure the loop instructions suitable for multiple iterative runs, following the guidelines in the loop rules. Then, generate a suitable first prompt for the loop to start executing the task.
 
 **Original User Prompt:**
@@ -21,7 +20,6 @@ Given the following original user prompt and the loop rules template, generate b
 {{data.loop_rules}}
 
 Now, produce the output in two parts separated by a line containing only `=====PROMPT=====`. Before that line, output the loop instructions exactly as they should appear in `loop-instructions.md`. After that line, output the content for `prompt-next.md` without any extra commentary, code fences, or preamble. Just the respective file contents.
-```
 
 # Output
 
