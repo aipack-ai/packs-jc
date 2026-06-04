@@ -40,6 +40,16 @@ local function loop_start(params)
 		end
 	end
 
+	-- Run enabled checks at start so that coder sees failures immediately
+	if loop_check.any_check_enabled(check_flags) then
+		local data_check_dir = loop_check.ensure_data_check_dir(workbench)
+		if data_check_dir then
+			local failing_paths = loop_check.run_checks(check_flags, data_check_dir)
+			-- Update fix mode state; we ignore should_redo because we handle prompt forwarding here
+			loop_check.update_fix_mode(paths.dir, failing_paths)
+		end
+	end
+
 	-- Check if fix-prompt.md exists (indicating fix mode)
 	local fix_mode, fix_prompt_content = loop_check.is_fix_mode(paths.dir)
 	local new_prompt = nil
