@@ -42,7 +42,7 @@ local function loop_start(params)
 
 	-- Run enabled checks at start so that coder sees failures immediately
 	if loop_check.any_check_enabled(check_flags) then
-		local data_check_dir = loop_check.ensure_data_check_dir(workbench)
+		local data_check_dir = loop_check.get_data_check_dir(workbench)
 		if data_check_dir then
 			local failing_paths = loop_check.run_checks(check_flags, data_check_dir)
 			-- Update fix mode state; we ignore should_redo because we handle prompt forwarding here
@@ -76,7 +76,7 @@ local function loop_start(params)
 	if new_prompt then
 		if not fix_mode then
 			new_prompt = new_prompt ..
-				"\n\nMake sure to follow the loop-rules.md and loop-instructions.md to give the NEXT_PROMPT tag"
+					"\n\nMake sure to follow the loop-rules.md and loop-instructions.md to give the NEXT_PROMPT tag"
 		end
 	else
 		new_prompt = value_or(input.coder_prompt, "")
