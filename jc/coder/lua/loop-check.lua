@@ -1,7 +1,3 @@
--- loop-check.lua
--- Shared check logic for loop agents (build, test, clippy).
--- This module provides functions to parse check flags, run cargo checks,
--- manage fix-mode state, and provide check file paths.
 
 local loop_check = {}
 
@@ -37,18 +33,6 @@ function loop_check.get_enabled_checks(check_flags)
 	return enabled
 end
 
--- Ensures the data/check directory exists and returns its path.
--- Returns nil if workbench has no data_dir.
-function loop_check.ensure_data_check_dir(workbench)
-	if not workbench or not workbench.data_dir then
-		return nil
-	end
-	local dir = workbench.data_dir .. "/check"
-	aip.file.ensure_dir(dir)
-	return dir
-end
-
--- Returns the expected data check directory path (may not exist).
 function loop_check.get_data_check_dir(workbench)
 	if not workbench or not workbench.data_dir then
 		return nil
@@ -56,11 +40,7 @@ function loop_check.get_data_check_dir(workbench)
 	return workbench.data_dir .. "/check"
 end
 
--- Runs cargo commands for each enabled check, saves error output to data check files.
--- Cleans up stale output files for disabled checks.
--- Returns a list of absolute paths of output files that contain errors.
 function loop_check.run_checks(check_flags, data_check_dir)
-	aip.file.ensure_dir(data_check_dir)
 	local failing_paths = {}
 
 	for _, c in ipairs(all_checks) do
@@ -72,6 +52,7 @@ function loop_check.run_checks(check_flags, data_check_dir)
 			if not result.error then
 				local combined = (result.stdout or "") .. "\n" .. (result.stderr or "")
 				if result.exit ~= 0 then
+					aip.file.ensure_dir(data_check_dir)
 					aip.file.save(file_path, combined)
 					table.insert(failing_paths, file_path)
 				else
@@ -111,10 +92,6 @@ function loop_check.is_fix_mode(loop_dir)
 	return false, nil
 end
 
--- Updates the fix mode state based on the list of failing check paths.
--- Creates fix-prompt.md when there are failures; deletes it when all pass.
--- Pins status messages.
--- Returns a table with `fix_mode` (boolean) and `should_redo` (boolean).
 function loop_check.update_fix_mode(loop_dir, failing_paths)
 	local fix_dir = loop_dir .. "/check"
 	local path = fix_prompt_path(loop_dir)
@@ -172,6 +149,7 @@ function loop_check.update_fix_mode(loop_dir, failing_paths)
 	else
 		if aip.file.exists(path) then
 			aip.file.delete(path)
+			loop_check.cleanup_empty_dir(fix_dir)
 			aip.run.pin("loop-fix-mode", "Exiting fix mode; all checks passed or checks disabled.")
 			return { fix_mode = false, should_redo = true }
 		end
@@ -193,6 +171,16 @@ function loop_check.get_check_file_paths(data_check_dir)
 		end
 	end
 	return paths
+end
+
+-- Removes the given directory if it exists and is empty.
+function loop_check.cleanup_empty_dir(dir_path)
+	if not dir_path then return end
+	if not aip.path.is_dir(dir_path) then return end
+	local files = aip.file.list("*", { base_dir = dir_path })
+	if #files == 0 then
+		aip.cmd.exec("rmdir", dir_path)
+	end
 end
 
 -- Extracts source file paths (e.g., .rs, .toml, .lua) referenced in cargo error output.
