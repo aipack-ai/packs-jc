@@ -82,6 +82,24 @@ local function loop_start(params)
 		new_prompt = value_or(input.coder_prompt, "")
 	end
 
+	-- If not in fix mode and checks are enabled, add a note about which checks passed.
+	if not fix_mode and loop_check.any_check_enabled(check_flags) then
+		local enabled_checks = {}
+		if check_flags.build then
+			table.insert(enabled_checks, "cargo build")
+		end
+		if check_flags.test then
+			table.insert(enabled_checks, "cargo test")
+		end
+		if check_flags.clippy then
+			table.insert(enabled_checks, "cargo clippy")
+		end
+
+		if #enabled_checks > 0 then
+			new_prompt = new_prompt .. "\n\n---\n\n(All enabled checks passed: " .. table.concat(enabled_checks, ", ") .. ")"
+		end
+	end
+
 	-- Update context_globs_post to include loop-rules and instructions files
 	local coder_params = value_or(input.coder_params, {})
 	local new_context_globs_post = value_or(coder_params.context_globs_post, {})
