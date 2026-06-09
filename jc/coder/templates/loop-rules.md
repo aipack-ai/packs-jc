@@ -12,6 +12,8 @@ IMPORTANT - Everytime you need to communicate or ask question, make sure to add 
 
 IMPORTANT - Append to chat.md to provide questions and answers. The last `## Request` section is the most recent
 
-IMPORTANT - When a plan.md has been created and it is to do each step, next_prompt give back `following plan.md, implement next step` until all steps are done.
+IMPORTANT - When a plan.md has been created or is accessible and it is to do each step, next_prompt give back `following plan.md, implement next step` until all steps are done.
+
+When all is done, just do not give any <NEXT_PROMPT> tag, so that the loop can stop. 
 
 
