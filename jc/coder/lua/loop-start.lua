@@ -25,13 +25,30 @@ local function loop_start(params)
 
 	aip.file.ensure_dir(paths.dir)
 
-	-- Save original user prompt on first run
-	if not aip.file.exists(paths.original_prompt) then
-		aip.file.save(paths.original_prompt, value_or(input.coder_prompt, ""))
+	-- Manage original user prompt: detect changes and regenerate loop instructions if needed
+	local coder_prompt = value_or(input.coder_prompt, "")
+	local prompt_changed = false
+	if aip.file.exists(paths.original_prompt) then
+		local existing = aip.file.load(paths.original_prompt)
+		if not existing or existing.content ~= coder_prompt then
+			prompt_changed = true
+			aip.file.save(paths.original_prompt, coder_prompt)
+			-- Clear stale next prompt so the loop does not continue with outdated instructions
+			if aip.file.exists(paths.prompt) then
+				aip.file.save(paths.prompt, "")
+			end
+		end
+	else
+		-- First run: save original prompt
+		aip.file.save(paths.original_prompt, coder_prompt)
+		prompt_changed = true
 	end
 
-	-- Generate loop instructions if missing
-	if not aip.file.exists(paths.instructions) then
+	-- Generate loop instructions if missing or prompt has changed
+	if prompt_changed or not aip.file.exists(paths.instructions) then
+		if prompt_changed and aip.file.exists(paths.instructions) then
+			aip.run.pin("loop-start-prompt-changed", "Prompt changed; regenerating loop-instructions.md")
+		end
 		local coder_params = value_or(input.coder_params, {})
 		local model = agent_config.model or coder_params.model
 		local agent_result = aip.agent.run("loop-prep", {
