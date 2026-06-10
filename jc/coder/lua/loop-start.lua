@@ -32,7 +32,10 @@ local function loop_start(params)
 
 	-- Generate loop instructions if missing
 	if not aip.file.exists(paths.instructions) then
+		local coder_params = value_or(input.coder_params, {})
+		local model = agent_config.model or coder_params.model
 		local agent_result = aip.agent.run("loop-prep", {
+			options = model and { model = model } or nil,
 			inputs = { { loop_dir = paths.dir } }
 		})
 		if not agent_result or not agent_result.outputs or #agent_result.outputs == 0 or not agent_result.outputs[1].success then
