@@ -24,7 +24,8 @@ local function loop_end(params)
 	-- Run cargo checks and manage fix mode (directory is created only when files are written)
 	local data_check_dir = loop_check.get_data_check_dir(workbench)
 	if data_check_dir and loop_check.any_check_enabled(check_flags) then
-		local failing_paths = loop_check.run_checks(check_flags, data_check_dir)
+		local check_args = agent_config.args
+		local failing_paths = loop_check.run_checks(check_flags, data_check_dir, check_args)
 		local fix_result = loop_check.update_fix_mode(loop_paths.dir, failing_paths)
 		loop_check.cleanup_empty_dir(data_check_dir)
 		if fix_result.should_redo then

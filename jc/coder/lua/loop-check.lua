@@ -1,11 +1,10 @@
-
 local loop_check = {}
 
 -- Returns a table with boolean flags for build, test, clippy from agent_config.
 function loop_check.get_check_flags(agent_config)
 	return {
-		build = value_or(agent_config.build, false),
-		test  = value_or(agent_config.test, false),
+		build  = value_or(agent_config.build, false),
+		test   = value_or(agent_config.test, false),
 		clippy = value_or(agent_config.clippy, false),
 	}
 end
@@ -17,9 +16,9 @@ end
 
 -- List of all possible check definitions.
 local all_checks = {
-	{ key = "build",  cmd = "build",  file_name = "cargo-build.txt" },
-	{ key = "test",   cmd = "test",   file_name = "cargo-test.txt" },
-	{ key = "clippy", cmd = "clippy", file_name = "cargo-clippy.txt" },
+	{ key = "build",  cmd = "cargo", file_name = "cargo-build.txt",  args = { "build", "--examples" } },
+	{ key = "test",   cmd = "cargo", file_name = "cargo-test.txt",   args = { "test" } },
+	{ key = "clippy", cmd = "cargo", file_name = "cargo-clippy.txt", args = { "clippy" } },
 }
 
 -- Returns only the enabled check definitions for the given flags.
@@ -42,13 +41,22 @@ end
 
 function loop_check.run_checks(check_flags, data_check_dir)
 	local failing_paths = {}
+	check_args = check_args or {}
 
 	for _, c in ipairs(all_checks) do
 		local enabled = check_flags[c.key]
 		local file_path = data_check_dir .. "/" .. c.file_name
 
 		if enabled then
-			local result = aip.cmd.exec("cargo", c.cmd)
+			local full_cmd = c.cmd
+			if c.args then
+				full_cmd = full_cmd .. " " .. c.args
+			end
+			local extra = check_args[c.key]
+			if extra then
+				full_cmd = full_cmd .. " " .. extra
+			end
+			local result = aip.cmd.exec("cargo", full_cmd)
 			if not result.error then
 				local combined = (result.stdout or "") .. "\n" .. (result.stderr or "")
 				if result.exit ~= 0 then
@@ -61,7 +69,7 @@ function loop_check.run_checks(check_flags, data_check_dir)
 					end
 				end
 			else
-				aip.run.pin("loop-check-error", { label = "cargo " .. c.cmd, content = result.error })
+				aip.run.pin("loop-check-error", { label = "cargo " .. full_cmd, content = result.error })
 			end
 		else
 			-- Clean up stale file for disabled check
@@ -98,50 +106,50 @@ function loop_check.update_fix_mode(loop_dir, failing_paths)
 
 	if #failing_paths > 0 then
 		aip.file.ensure_dir(fix_dir)
-        local lines = {}
-        table.insert(lines, "Build/test/clippy checks have FAILED.")
-        table.insert(lines, "")
+		local lines = {}
+		table.insert(lines, "Build/test/clippy checks have FAILED.")
+		table.insert(lines, "")
 
-        -- Collect source files referenced in the error output.
-        local source_files = {}
-        local source_seen = {}
-        for _, p in ipairs(failing_paths) do
-            local record = aip.file.load(p)
-            if record and record.content then
-                local spaths = loop_check.extract_source_file_paths(record.content)
-                for _, sp in ipairs(spaths) do
-                    if not source_seen[sp] then
-                        source_seen[sp] = true
-                        table.insert(source_files, sp)
-                    end
-                end
-            end
-        end
+		-- Collect source files referenced in the error output.
+		local source_files = {}
+		local source_seen = {}
+		for _, p in ipairs(failing_paths) do
+			local record = aip.file.load(p)
+			if record and record.content then
+				local spaths = loop_check.extract_source_file_paths(record.content)
+				for _, sp in ipairs(spaths) do
+					if not source_seen[sp] then
+						source_seen[sp] = true
+						table.insert(source_files, sp)
+					end
+				end
+			end
+		end
 
-        table.insert(lines, "The following check output files contain full error details (provided in context):")
-        table.insert(lines, "")
-        for _, p in ipairs(failing_paths) do
-            local rel = aip.path.diff(p, CTX.WORKSPACE_DIR)
-            if not rel or rel == "" then
-                rel = p
-            end
-            table.insert(lines, "- " .. rel)
-        end
-        table.insert(lines, "")
+		table.insert(lines, "The following check output files contain full error details (provided in context):")
+		table.insert(lines, "")
+		for _, p in ipairs(failing_paths) do
+			local rel = aip.path.diff(p, CTX.WORKSPACE_DIR)
+			if not rel or rel == "" then
+				rel = p
+			end
+			table.insert(lines, "- " .. rel)
+		end
+		table.insert(lines, "")
 
-        if #source_files > 0 then
-            table.insert(lines, "Source files referenced in the errors:")
-            table.insert(lines, "")
-            for _, sp in ipairs(source_files) do
-                table.insert(lines, "- " .. sp)
-            end
-            table.insert(lines, "")
-            table.insert(lines, "Review the check output files to understand what needs fixing in the source files above.")
-        else
-            table.insert(lines, "Review the check output files to understand what needs fixing.")
-        end
-        table.insert(lines, "")
-        table.insert(lines, "Do not emit a <NEXT_PROMPT> tag; the loop will re-run checks automatically.")
+		if #source_files > 0 then
+			table.insert(lines, "Source files referenced in the errors:")
+			table.insert(lines, "")
+			for _, sp in ipairs(source_files) do
+				table.insert(lines, "- " .. sp)
+			end
+			table.insert(lines, "")
+			table.insert(lines, "Review the check output files to understand what needs fixing in the source files above.")
+		else
+			table.insert(lines, "Review the check output files to understand what needs fixing.")
+		end
+		table.insert(lines, "")
+		table.insert(lines, "Do not emit a <NEXT_PROMPT> tag; the loop will re-run checks automatically.")
 		local content = table.concat(lines, "\n")
 		aip.file.save(path, content)
 		aip.run.pin("loop-fix-mode", "Entering fix mode due to check failures")
@@ -187,17 +195,17 @@ end
 -- Scans the text for patterns like `--> src/main.rs:10:5` or paths ending with those extensions.
 -- Returns a deduplicated list of relative file paths.
 function loop_check.extract_source_file_paths(text)
-    local paths = {}
-    local seen = {}
-    for _, ext in ipairs({"rs", "toml", "lua"}) do
-        for file in string.gmatch(text, "([%w_/%.%-]+%." .. ext .. ")") do
-            if not seen[file] then
-                seen[file] = true
-                table.insert(paths, file)
-            end
-        end
-    end
-    return paths
+	local paths = {}
+	local seen = {}
+	for _, ext in ipairs({ "rs", "toml", "lua" }) do
+		for file in string.gmatch(text, "([%w_/%.%-]+%." .. ext .. ")") do
+			if not seen[file] then
+				seen[file] = true
+				table.insert(paths, file)
+			end
+		end
+	end
+	return paths
 end
 
 return loop_check
