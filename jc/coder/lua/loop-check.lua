@@ -39,7 +39,7 @@ function loop_check.get_data_check_dir(workbench)
 	return workbench.data_dir .. "/check"
 end
 
-function loop_check.run_checks(check_flags, data_check_dir)
+function loop_check.run_checks(check_flags, data_check_dir, check_args)
 	local failing_paths = {}
 	check_args = check_args or {}
 
@@ -48,15 +48,29 @@ function loop_check.run_checks(check_flags, data_check_dir)
 		local file_path = data_check_dir .. "/" .. c.file_name
 
 		if enabled then
-			local full_cmd = c.cmd
+			-- Build the list of arguments for the cargo subcommand
+			local cmd_args = {}
 			if c.args then
-				full_cmd = full_cmd .. " " .. c.args
+				for _, a in ipairs(c.args) do
+					table.insert(cmd_args, a)
+				end
 			end
 			local extra = check_args[c.key]
 			if extra then
-				full_cmd = full_cmd .. " " .. extra
+				if type(extra) == "table" then
+					for _, a in ipairs(extra) do
+						table.insert(cmd_args, a)
+					end
+				else
+					table.insert(cmd_args, extra)
+				end
 			end
-			local result = aip.cmd.exec("cargo", full_cmd)
+			-- Build a display string for error messages
+			local full_cmd = c.cmd
+			if #cmd_args > 0 then
+				full_cmd = full_cmd .. " " .. table.concat(cmd_args, " ")
+			end
+			local result = aip.cmd.exec(c.cmd, cmd_args)
 			if not result.error then
 				local combined = (result.stdout or "") .. "\n" .. (result.stderr or "")
 				if result.exit ~= 0 then
@@ -69,7 +83,7 @@ function loop_check.run_checks(check_flags, data_check_dir)
 					end
 				end
 			else
-				aip.run.pin("loop-check-error", { label = "cargo " .. full_cmd, content = result.error })
+				aip.run.pin("loop-check-error", { label = c.key, content = result.error })
 			end
 		else
 			-- Clean up stale file for disabled check
