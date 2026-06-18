@@ -71,11 +71,11 @@ local function loop_end(params)
 	end
 
 	-- No next prompt requested: write THE_END marker and pin
--- No next prompt requested: remove the prompt file to indicate loop completion
-if aip.file.exists(loop_paths.prompt) then
-    aip.file.delete(loop_paths.prompt)
-end
-aip.run.pin("loop-end", "No next prompt requested. Loop ended.")
+	-- No next prompt requested: remove the prompt file to indicate loop completion
+	if aip.file.exists(loop_paths.prompt) then
+		aip.file.delete(loop_paths.prompt)
+	end
+	aip.run.pin("loop-end", "No next prompt requested. Loop ended.")
 
 	return {
 		coder_redo = false,
