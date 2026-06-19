@@ -1,26 +1,7 @@
 # IMPORTANT:
 
-## `jc@coder` has been moved to `pro@coder`
-
-(see [github.com/aipack-ai/packs-pro](https://github.com/aipack-ai/packs-pro))
-
-Do the following:
-
-```sh
-aip install pro@coder
-
-# (optional)
-aip uninstall jc@coder
-```
-
-Then, it works exactly the same:
-
-```sh
-aip run pro@coder
-```
-
-(Your new prompt file will be at `.aipack/.prompt/pro@coder/coder-prompt.md`)
-
+- `jc@coder/loop` has been moved to `lab@loop` (https://github.com/aipack-ai/packs-lab) `aip install lab@loop`
+- 
 ## Future of `jc@` packs
 
 The `jc@` namespace will be for more personal [AI packs](https://aipack.ai) that are worthwhile to share, perhaps with some experimental or work-in-progress packs.
