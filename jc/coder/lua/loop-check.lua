@@ -3,22 +3,22 @@ local loop_check = {}
 -- Returns a table with boolean flags for build, test, clippy from agent_config.
 function loop_check.get_check_flags(agent_config)
 	return {
-		build  = value_or(agent_config.build, false),
-		test   = value_or(agent_config.test, false),
-		clippy = value_or(agent_config.clippy, false),
+		build = value_or(agent_config.build, false),
+		test  = value_or(agent_config.test, false),
+		lint  = value_or(agent_config.clippy, false),
 	}
 end
 
 -- Returns true if any check is enabled.
 function loop_check.any_check_enabled(check_flags)
-	return check_flags.build or check_flags.test or check_flags.clippy
+	return check_flags.build or check_flags.test or check_flags.lint
 end
 
 -- List of all possible check definitions.
 local all_checks = {
-	{ key = "build",  cmd = "cargo", file_name = "cargo-build.txt",  args = { "build", "--examples" } },
-	{ key = "test",   cmd = "cargo", file_name = "cargo-test.txt",   args = { "test", "--", "--nocapture" } },
-	{ key = "clippy", cmd = "cargo", file_name = "cargo-clippy.txt", args = { "clippy", "--all-targets", "--", "-D", "warnings" } },
+	{ key = "build", cmd = "cargo", file_name = "cargo-build.txt", args = { "build", "--examples" } },
+	{ key = "test",  cmd = "cargo", file_name = "cargo-test.txt",  args = { "test", "--", "--nocapture" } },
+	{ key = "lint",  cmd = "cargo", file_name = "cargo-lint.txt",  args = { "clippy", "--all-targets", "--", "-D", "warnings" } },
 }
 
 -- Returns only the enabled check definitions for the given flags.
@@ -121,7 +121,7 @@ function loop_check.update_fix_mode(loop_dir, failing_paths)
 	if #failing_paths > 0 then
 		aip.file.ensure_dir(fix_dir)
 		local lines = {}
-		table.insert(lines, "Build/test/clippy checks have FAILED.")
+		table.insert(lines, "Build/test/link checks have FAILED.")
 		table.insert(lines, "")
 
 		-- Collect source files referenced in the error output.
