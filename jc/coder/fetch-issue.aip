@@ -3,8 +3,8 @@
 Fetches Issue details and comments from GitHub using `gh` CLI and saves them as Markdown files in the workbench data directory.
 
 ```sh
-aip run dev/agents/fetch-issue.aip -i "my-workbench:212"
-aip run dev/agents/fetch-issue.aip -i "new-workbenchs:214,215,216" -i "my-other:212"
+aip run jc@coder/fetch-issue.aip -i "my-workbench:212"
+aip run jc@coder/fetch-issue.aip -i "new-workbenchs:214,215,216" -i "my-other:212"
 ```
 
 # Before All
