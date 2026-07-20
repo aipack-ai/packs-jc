@@ -1,9 +1,3 @@
-# Options
-
-```toml
-model = "flash"
-```
-
 # Description
 
 Fetches PR details and diffs from GitHub using `gh` CLI and saves them as Markdown files in the workbench data directory.
