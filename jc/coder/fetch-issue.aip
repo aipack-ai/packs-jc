@@ -1,9 +1,3 @@
-# Options
-
-```toml
-model = "flash"
-```
-
 # Description
 
 Fetches Issue details and comments from GitHub using `gh` CLI and saves them as Markdown files in the workbench data directory.
