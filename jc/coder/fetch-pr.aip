@@ -3,15 +3,15 @@
 Fetches PR details and diffs from GitHub using `gh` CLI and saves them as Markdown files in the workbench data directory.
 
 ```sh
-aip run dev/agents/fetch-pr.aip -i "my-workbench:212"
-aip run dev/agents/fetch-pr.aip -i "new-workbenchs:214,215,216" -i "my-other:212"
+aip run jc@coder/fetch-pr.aip -i "my-workbench:212"
+aip run jc@coder/fetch-pr.aip -i "new-workbenchs:214,215,216" -i "my-other:212"
 ```
 
 JSON-relaxed input is also supported:
 
 ```sh
-aip run dev/agents/fetch-pr.aip -i "{ wb: 'my-workbench', prs: [212, 213], output: 'desc' }"
-aip run dev/agents/fetch-pr.aip -i "{ wb: 'v06-providers', from_pr: 195, status: 'close', output: 'desc', labels: ['NEW-ADAPTER'] }"
+aip run jc@coder/fetch-pr.aip -i "{ wb: 'my-workbench', prs: [212, 213], output: 'desc' }"
+aip run jc@coder/fetch-pr.aip -i "{ wb: 'v06-providers', from_pr: 195, status: 'close', output: 'desc', labels: ['NEW-ADAPTER'] }"
 ```
 
 Shape:
