@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../../markex/tag/struct.TagFence.html](../../../markex/tag/struct.TagFence.html)...

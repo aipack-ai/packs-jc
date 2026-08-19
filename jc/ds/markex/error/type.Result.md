@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../markex/type.Result.html](../../markex/type.Result.html)...

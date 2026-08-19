@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [constant.FENCE_BRACKETS.html](../../../markex/tag/constant.FENCE_BRACKETS.html)...

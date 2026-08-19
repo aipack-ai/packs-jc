@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../../markex/tag/fn.extract.html](../../../markex/tag/fn.extract.html)...

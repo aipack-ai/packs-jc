@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [TagOptions struct documentation](../../../markex/tag/struct.TagOptions.html)...

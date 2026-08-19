@@ -1,0 +1,3 @@
+# Redirection
+
+- Redirecting to [TagIter](../../../markex/tag/struct.TagIter.html)...

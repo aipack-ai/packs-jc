@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [TagPattern Struct](../../../markex/tag/struct.TagPattern.html)...
