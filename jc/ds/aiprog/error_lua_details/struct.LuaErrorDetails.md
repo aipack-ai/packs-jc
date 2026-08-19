@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../aiprog/struct.LuaErrorDetails.html](../../aiprog/struct.LuaErrorDetails.html)...

@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../../aiprog/registry/trait.AipHandler.html](../../../aiprog/registry/trait.AipHandler.html)...

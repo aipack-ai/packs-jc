@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [macro.impl_lua_serde_traits.html](macro.impl_lua_serde_traits.html)...

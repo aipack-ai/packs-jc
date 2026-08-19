@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [DirContext](../../../../aiprog/modules/struct.DirContext.html)...

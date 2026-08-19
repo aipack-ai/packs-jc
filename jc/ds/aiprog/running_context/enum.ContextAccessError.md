@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [ContextAccessError](../../aiprog/enum.ContextAccessError.html)...

@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [SchemaRef](../../../aiprog/schema_ref/struct.SchemaRef.html)...

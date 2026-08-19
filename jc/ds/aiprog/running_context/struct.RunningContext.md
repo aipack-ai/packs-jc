@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../aiprog/struct.RunningContext.html](../../aiprog/struct.RunningContext.html)...

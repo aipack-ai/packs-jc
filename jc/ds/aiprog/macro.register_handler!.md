@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [macro.register_handler.html](macro.register_handler.html)...

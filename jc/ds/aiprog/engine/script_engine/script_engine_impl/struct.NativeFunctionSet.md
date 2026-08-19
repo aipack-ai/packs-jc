@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../../../aiprog/struct.NativeFunctionSet.html](../../../../aiprog/struct.NativeFunctionSet.html)...

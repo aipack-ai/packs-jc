@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [AipIntoLua Trait Documentation](../../../aiprog/trait.AipIntoLua.html)...

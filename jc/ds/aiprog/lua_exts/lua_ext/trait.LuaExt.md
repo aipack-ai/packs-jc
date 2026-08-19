@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../../aiprog/trait.LuaExt.html](../../../aiprog/trait.LuaExt.html)...

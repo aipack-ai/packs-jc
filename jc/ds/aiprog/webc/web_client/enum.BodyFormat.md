@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../../aiprog/webc/enum.BodyFormat.html](../../../aiprog/webc/enum.BodyFormat.html)...

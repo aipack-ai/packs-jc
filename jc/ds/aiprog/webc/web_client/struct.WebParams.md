@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [WebParams Struct](../../../aiprog/webc/struct.WebParams.html)...

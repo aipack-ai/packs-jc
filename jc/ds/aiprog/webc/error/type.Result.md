@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../../aiprog/webc/type.Result.html](../../../aiprog/webc/type.Result.html)...

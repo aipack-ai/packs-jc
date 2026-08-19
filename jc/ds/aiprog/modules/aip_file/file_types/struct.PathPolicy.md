@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../../../aiprog/modules/struct.PathPolicy.html](../../../../aiprog/modules/struct.PathPolicy.html)...

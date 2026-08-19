@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../../../aiprog/modules/struct.ResolvedDirPath.html](../../../../aiprog/modules/struct.ResolvedDirPath.html)...

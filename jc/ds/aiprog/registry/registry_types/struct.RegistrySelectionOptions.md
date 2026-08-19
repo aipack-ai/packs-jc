@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [RegistrySelectionOptions](../../../aiprog/registry/struct.RegistrySelectionOptions.html)...

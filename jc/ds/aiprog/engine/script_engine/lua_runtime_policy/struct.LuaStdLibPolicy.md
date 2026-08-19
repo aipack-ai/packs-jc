@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [LuaStdLibPolicy](../../../../aiprog/struct.LuaStdLibPolicy.html)...

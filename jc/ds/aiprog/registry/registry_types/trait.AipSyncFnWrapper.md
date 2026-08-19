@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [AipSyncFnWrapper](../../../aiprog/registry/trait.AipSyncFnWrapper.html)...

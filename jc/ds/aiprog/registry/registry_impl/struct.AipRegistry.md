@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [AipRegistry](../../../aiprog/registry/struct.AipRegistry.html)...

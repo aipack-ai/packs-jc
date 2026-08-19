@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [AipRegistryResult](../../../aiprog/registry/type.AipRegistryResult.html)...

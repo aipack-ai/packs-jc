@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../aiprog/enum.Error.html](../../aiprog/aiprog/enum.Error.html)...

@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [RegistrySelectionResult](../../../aiprog/registry/type.RegistrySelectionResult.html)...

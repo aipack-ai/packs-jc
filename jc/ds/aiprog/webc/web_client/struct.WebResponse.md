@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [WebResponse](../../../aiprog/webc/struct.WebResponse.html)...

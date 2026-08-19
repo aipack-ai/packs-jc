@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [AipParams Trait Documentation](../../../aiprog/registry/trait.AipParams.html)...

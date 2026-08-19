@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../aiprog/struct.RunOutcome.html](../../aiprog/struct.RunOutcome.html)...

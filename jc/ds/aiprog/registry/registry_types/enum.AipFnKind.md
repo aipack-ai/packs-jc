@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [AipFnKind Enum Documentation](../../../aiprog/registry/enum.AipFnKind.html)...

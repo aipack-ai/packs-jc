@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [../../../aiprog/registry/type.HandlerResult.html](../../../aiprog/registry/type.HandlerResult.html)...

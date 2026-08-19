@@ -1,0 +1,3 @@
+# Redirection
+
+Redirecting to [AipRegisteredFn](../../../aiprog/registry/struct.AipRegisteredFn.html)...
